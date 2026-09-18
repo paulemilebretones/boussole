@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boussole - mes investissements</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Boussole">
+<meta name="theme-color" content="#0C1120">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" href="data:image/png;base64,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">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Boussole%22%2C%22short_name%22%3A%22Boussole%22%2C%22start_url%22%3A%22./%22%2C%22scope%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230C1120%22%2C%22theme_color%22%3A%22%230C1120%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAMAAAADABAMAAACg8nE0AAAAMFBMVEXluVDds0%2BLin8iKDgSGzcRGzgRGzcQGzcVGygPFykOEyANEyENEyANEx8JFTQFDib84FM3AAAK80lEQVR42u2a32sb2RXHZ%2BR/YEZOm7CwRZba3VJYry0tTVqoQ7aD1D5UCwXLmEJfKsmElEDXssuyXUM3L2Fhyct6FzeYst2XIhT81CwB%2B6EvLcgjwpLC1paEia3UbwNNCt2ahOk9d0aaH/ecOyNFzkPrC8GKPXM%2B957zPfeee3UV02l7pepYW2XTNay4P%2B9Wx9yuBQGt9XEDFjsvGFAZN6AUBLSrY287AcC4ReTJ6EUB/jp%2BwG/8gNbd8cfgWscPWB8/YPHFAlbGD1jwA3arp9C2fYB2bBEZRmwZ7fgA8dPAsoZMhGEBudxIgC9jAzQ1NuA9H%2BAvpwH4pQcYIpHjA9xUfkGA9dMALP5PAVZOA7AwEiCdHgVgxgfEnyqqC14eDDGZxp/s3OlUGaZoKRu85YcpXOIDmPXCmsXacS0mwwPsxTFfsKxajjf26R9xEJseoBRp/rq1nEvrusKarqdzF2MgKvEB5YK1nAXjqs6aBpDMd61aflwA43oPzOu%2BxliZuWNjPADDWp5y%2Bu5vmpJ8wzLGATCsrKb0XaM4PziODUJKiAkA%2Byo3rybTjorSUxpHaHJCPACzD8aYxXSOZwHPhByLCSAUGSEWoLyWVXhf029Yx24iszRbs37h%2BE3JHOefB1AuZjUwk8xZx/5ZyGB5kZtyCL38cwCKR459psh8OPXWjjhBne6NDjCOUszTymSxh3jaKB7PgqjUOWNUQHltlttfw3O2nLcgQFqSCEM0oPimAvZpoRgWH0OmNxqgDAHQkmtGsNshAhsj4aQoQLnIXtYSc%2BXAbws1MUraBKokPwAd/6ECneuFRjUXtFXgw5yuydcDbEUrX0%2BxNydDfSsfTufDmcKclEDjLF8yC4fgICss/4fnBamBk16pSQG7mERTWPSKsxM9IVmYk9Rf52VVBVIX8QFMCsErziQETXIxfL0mq4vEyq5c5AMQulVMqavCsz0YghgFaelYhgGc64mpoWsitfA2e3jakAHWxZ6ifi0fqdp0Ho2X6DpZ%2Bc4M6dp50a1sYNo38njAhJHJABA3tYhYYr%2Bf7CGSY1EQ5OUH/Cn0Qk0DCSHT3wzmCwa%2BooqS%2BJmvfL8rhhiRkBuaHj4vCsG5Ru%2BToaMTmJ1lWOBQsjg0/z45tNNH%2B9OPPfEXMcyBnX5wvuYe6hFmdExG3HmhP0gOQ9h40RBzEek6/icW5qCPAoDAeRF4WptDuzkDJSMmI%2B69oC4C50W7YUegRriIcBk5PgpGZ5s6syvOEh5yRITLiLsvoLwF8tRR7ItfRDrhPu6jXpxjTf7kKlpmHDoAlF4thiIXBNwNmplA3eyIiJAR155fqIGTX//ZdfjBsIh0Ah/qWPDs2p8IEIK5PC0iQqfctb6/kMf7IBUVLXNgjuVNvUjyvZ6FAO0YIXBFpJMDnAnEP/gNiK%2Bu%2BJWqnZOJiJRR%2BSF7sxasKZBvoUL9CE03DmCyRo3QGzv5NVfQk5iISBmx6CUowECnEElcJQMR6ZIHBvNdX6UDQF9GwXGiIqJlNOPFX/gucwBghQntYl0qo6UrXtUkAHZ9IiJEcugByCc8GW2HAP0ow1yNv1694gGiZdSPsQiYiRYRKaMjTyACoF%2B5gBIKESKiZTQAuDWLH%2BBGuUCq1BORbDZyezeIsQdw1v1gshAiks1Grn/dFd8PcJZlSRoc%2BgHEojbbRy90RMB6fwOAS4Tp1wc4V5MnwqIIcApgkPL5apSISBk97AOumSKARxkA0/koEZGLWn9/4sXYB%2BBrTplM5CXNPc90ZFTIS1N5BwHwIPinE0xESnJKk9ZGTgS9EIQBrDIh3uUi0jJrVlYlZQS94DUNCuCbBE9o4Xe5iBKWYVgpUkZ9kbtbgzAAouyf0kURsc0wa49VSkZsGw1/MIzf1RsIAFKNBvB%2BzwGAl8BEDa8xQHnNsu1njRBga5a9leyRk2lR0xRVrQGgmIKPBWJVnugVwdTkSRgwoyhqggTA4KHbDoCSkQtIKYoygQEUGSCdTk/1AUn2Hwlgho1QBES4qMBsptWPHAB8XhjSRW4RTwc5C4DvAeCHGgDoIC/96ObNmx8gKgKhygF9mbKPmUekTCubrW63gwKaFTLRqm8zq6nEvw3jrZkE%2B/jNVTLRSnXWGiigtS6ZKiDKSsaysgrEWDJV%2BOaJMMD8coGe7MDxmur8w0XkTHYr75k0oE1P19U0J7BsSVMicqfrHQmg9RG94HC76amk85NecH7ckQDMv9FLZjbta6iInCXzJ6YMsEcv%2Bm/6Ad9aJRf9TSmg%2BYQuW/wAumy53JADHmhk4ekHzJWoDUIEwGzTpaMfcJHc4nwYAdhKEQcVfRlJRMSL3xMzAkCX7z4ZZehdYCSAnIyWfuoDrJIbkChA48/0FipKRJBnF/YjAM3H9CbQJyJqp6693ogCkIlQXYkUEaJSEfB3eiMeKSJEpQKA6xT3wM%2BzI4gIAZCHIZ6MMrXYIhIBjU9V7WtVuYzo4xxBRCKAyYiIcuVILiKIsSAiBPCEbS/%2BJZfRRXSqeyuFiEgEQJS1y3mpjPAYM4GrQggwAIz045JERqiIKlcfYzFGADwI/8HuYS/JAKXfs469vB0HAEPtfl6iZYSJqPLuFhoCBOAEobFOz0aYiBZ5v/bNWAA21gv7e/OilWUSML/J8gcLAQaAICROWkicXRk9QiLcgXGLWYAD2HzHfNReIRY1JMYLO%2BAh/XI8gOuj1p6gpAUCUNrs3PlURWY6AtD8J3%2B49fk8KqNXhQC82%2BHKeMmMC2CzBSiuGw6DI6NwjCtXu1zbmEhxAC8tQBHt9SChsowAKos7UCsQHsIBoCP1VsNs7a2URBkFK4rKwmbH0cXLZnwAPP8Sy5owAWQUjDG3bza%2BcHoUF8B9pHYaAqEQBjj2m/dTOpplJIDH7PWmGSaAjF4V7Jv1xyqeZSQAVKcnuvBKq/3xfEBGvhjPX90B%2B3wAeIhJAO/Ta3zuarU/qZQwQKX0DrdvNuDhl5tDAZotuIyx5Yy6e291vjSQUd/8/NLtrvNsF76Iv9MYCmBC6msX3GF32xtVB8Fk1HPMVzd2uq47fwuP7pvDAZodGMLlurv77O5urFbm5%2BeL2cwj9qO0tLHdPy2oP4EnbzWGBJh3voCrT4ODq1a3fW/jk9Xq4SvVpXc2bu8MDiOa92d9Yx0C0GzBBaZvn3g963a7u/cevHZ7m33wHtv6gyKJgATAtcGc1AxtEn8QXNcb4CBXb0MCmlszcEfqVj3w2512UM4ncD8q8bQxAsCJnjZpBwmBAdRtfg3uct0cBWBuvc8vCtrk63WbXxWkIxwBaB5MASFj11EPNF37iYPGiABwEicc7CODqN/h9gUdDAMwtx7w66CTt56GB9Gs3/9qltv/zkljdEBz631%2BazX5fXu/7htFnXX/M/dC61Op/QgACwPvpqJmPrSf1gftvv2VeyVXIoFYABAiv/Sr6JlLtm0/63YP2I/P%2BpeKJw8i7EcCQIr8WrSi6MlM7tLNmzdy2SnnmxYthv1oACcMLnY7X%2BMMLnbbkfZjABjhxuBquqZ4n5KXYtiPAzCZIrNa8PY7%2B2/m1rMY9mMBIKdupHWlf4EffJS%2BZO/HsR8PAGnFlDPl3K9XWbQv2c/qDXN8AEit%2B7b9R%2Bdy/QcHkBMxX4wLAES9ZfPWqcc2PwzAYfA2zDtDAThjyBeGBdj26QJauVzjVAFbmnhoNmaAftoA9QxwFuTnBNw57UQ79ani9Ce7odsZ4AxwBjgD/F8A/gu7xgsEnQtDRgAAAABJRU5ErkJggg%3D%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAgAAAAIABAMAAAAGVsnJAAAAMFBMVEXqvFDgtU/ftU92c2oSGzcRGzgRGzcUGy4QGzcPFykOEyANEyENEyANEx8JFDQFDibTKvO2AAAhWUlEQVR42u2dT2wc133Hl8MAuu6OA%2BQ6M6tGTYA49K5kOgUiJ9KGZi97UbkiUcCHZnctg4KhinIIxRUJ1JJgo7UObWlFcAQD8SHFlgQvrVJV1CUBgmY5CwN2AUXULgRItKVe9hAXEExIYN/M7sx78//9%2Bb1dajnvpD/k7rzP/H7f7%2B/35s1MxgwZf6zUR3DUPgibaybsH2/UR3LM0wJorYwmgLk2LYC3RxPASVoAm/URHRuUAO5WRnP%2BteuUAO6MKoALlABujGoKzNMBGFUTCLeBFEAIgEujCmCWDsDIumCoD2b2jwuG%2B2Bm/7hguA%2BGAPj96KbAaRoAo2sCoTaQAtg3vWBEP5jZTy4Y5oOZfeSCoT6YAthHZUBoIZDZP81weEMcAND6cJQBvNlOBrAyygDmKAC8PcoATiYDMOsjPZI1YHO0AWwkAhjlMiCsEEgB7I8rwy6ADxIB3BhtDZhPAjDaZUBIIZAC2Fd1UEgllNlfdVCwEsrsrzooWAll9lUZEFIIpAD20XpQ6JqQH8B/jzqAf0wAMOKFYLAU9AFoDRZAtYTG1GABtOMBDLYQvNJF4/FQS8GhAjj12iIa5y7vJQADrYSnj2XQOHhxmLVwZpiV8PQx1TD0wQKox4vg5qAB5HKDBrARC2CwheAwAPhLwRRACmCIrcBQAFyIBfDH0QfwQSyA34%2B%2BC5yOAzDgVmAoAHzNQGaYrcBQAMylAFIAMQDeHn0AJ1MAMQAGfFVgKAB83VAKwNsK7AcA1%2BMAVEYfQC0FsKcADH5JbG8BGMvlsnsJwJ1BAzDQGDSAC3sHQL1kj/reATDYbrheP/UeGpcH/KXzewjAEK4N7i0AQxkxAEZ9j1xYP5wCSAGkAFIAKYD9slG4N07uHQDVXik8tQ8B9GY%2B/Z49Lg62JRg6AOu8v2dtD%2Btu92Zetv/y3qBiIQbA5kBmP41mW3rteLFgFAx75I18cfJcCf3z5YEw2BgegKo1%2B%2B3X0Nw1a39YJmcP%2B48KonAO/e9F%2BbkwNACl0lvW7K3Jj6mGb%2Bg5C0LxcLn7WDaCIQEola50q8WC1pu8nvMN%2Bx%2BzFoOSbARDAVBF0y8V9UxGDZk8AcFiUDyHEEwNA4C8NVGk9Nb0x2Jm3x8GyhAlf677pTQE3lXRgQCoTne30fSVxNn34wD9aHEKyeGoACi9tX3coJ2%2Bg0CdLEvKg0EDqJa6bxRQ8FNPv4cgm8kf7l6cev4BoOxf0DKGkWMcCIFSLG%2BXnncApSvbBRT9OY6B8iC/1C093wBK3eOFDFv0k0GQUQ53q1PPLwCk/se1MSPC8v2VYFgQaMrkFWghGByA6vR2MavoYV5vV77kCC8PcypKg/L21PMJoFpG6a/qwdmjag/JAmp%2Biov2PUPFYjHvNAghaQBNYFAA7PkbwcjPIktEjV%2Bp6xml1xasLimkVDSy%2BaXHU88fADT/l/zpbxU4GdTxlfrrH8SwVkguHi8iPKofgZEdP/zl1PMGoFp%2B5Jc/u8TNH57uTz64Rnaq290%2BjtpFf82oasrLgAQGAsCav0/%2B7Omfs1c8SnGrRSW7awgQgNOBQQAIzt/ydGv6CWte1ZLdNmsoEXwEjoIRGASA6e0J7/x7pT3VQoeF4LWC5m0eEIElKAIDADC1/ZJn/sjN1cNvdWnXeSwEx30OigiULz4vAEqPC2O6p54by5e7VYaqvlTqbhe9IqpqL5SrzweAUtc3/yyq6FnbOiSHx3VPGaFm81dKzwOA6pXj5IFbpdy5LvvSRtXuI8k0ULOHulN7H0C1fDxr%2BIr5L7nOXKmM0oDUEiMDUhBJBjD9UFM92sW/rmM3kx4CyisAViAXQAkZoG/%2BAit7JaudJgjoCoAQSgVQvVIgTpk1/8dCwlW68qhAmAGyAnEhlAkACQBxwtSssvS4JPqJnp5KzR4UlgGZAJAAkKcrD1C9WV01AdUYe2V77wKobk%2BoxPzHQVYyfASQDJT2KoBq%2BSwWALjqvTpNVtYorgSXR%2BQBKD/M6DK6FxQDRG%2BlZg9v700A1W1CAHTA/tXXXRuCSSALgJUARMnyMuRKZrVMllfaC0JJEAdAzAFwAgAVrSSBd3F4iSbBdSkbJJADEEd4EHQd1/r4t45nyCQQ%2BXg5O0TKxxRCqK%2BAX9KrdokaU8uLJJgUAKWHms5VsVNPhOwy1OzRi3sLQPUKLoEMZADUv3jqMsNCI5YBY1wgCaIBmJf4FdCNT0uipuiV4%2BgUgxBiGdAOcuvgrAm/VZYsAbQ8w7pN9eGLDD/8Fq40VX4dlLFXmFBAtjKl%2BuCbDGeyRPQa2qHtvQMABYB7ZjJM3Vr52Pg2U6bhL8oeLcEDWBEOAO0QUwVUnmACUEXf5BDQxzmtEP6WmepDXees08uaypTL1cduEqAQqO4RAGXyoLbZckfXjjKdxymcBMY4X7kNDqD60F2vQMo0xfarCiOAKplufCEADoAIAFZvsgAwPj6A6DlUvhCABoADQNVYu7TyMVUdZ/ydaSLguEIgBgDX3eM4APRx1h6wPKEzA6iWC4pQCADfPk8EgMrszBYAZZpxEkTVwRUCwABwALCX58gE9ByjCnrKDq4QmAd9hggRAOzVOdLAHAcApIM4BJjLQeCHqIgEQB8A%2B1NkcO/JrCAJAJhXRe0g5m7PytaTpDjmUC27VsgeP7APUsLpqHGs0ZStUOYAUC%2B5iWcw/zYoACzI6jjHMmgPALMN2CGgOrUHawiAApgmAoDdkPr5wx7FpPbqrNIDCaB6BQfAlzyzUHKcALD4MmtPLIBNrhnwViQOgIOX6wIhwOwigI/ULE%2BIBICTQOoBnsUtHAKsCyMbYE%2BVrbp2zNeV9Pnx2IAnBNhSCPCxuraNC/SlDgDlVJ3/t5kBngR7snT1oiOB2os812nc39eWpurcCmItQzHJINyjtfERcDg5%2BftcNmDVAlwyCAeAOACuJXoM4NuXeX5/Cp%2BAbTAAHzIc/yPn%2B1W%2BizRuFcVnA2QKsoTQm3EAWBYE3DZA57xMx6tiggTnY1%2BxwfC6wbKmi6QwCYDPBnArylIN%2Bl84yP2WGSyBnOcPRzCnDSCEZwzHhugBXAB6z1D5jGAA4Dpa/CMYTgLUi5bc88fpgV4AfDaAs0jNUecAGICHghJYP4Uv8eS%2ByfkZUw8U1lIgAcAms4Lx5i/OIX4ZwQsyDJ%2BwAfK%2BwepFXRc7doyQtZIJVyLq82CCvHESV3EvcgZA/bJG3ArCu98FHwdtDpyEeeeoqz7cW3XcQlLEBnA1Qh2JMC9dxRlwgDd4CRMQiSO3HqXNASAAYo2cbQJ/QwDgtgEcSLQ5kACAshnAGXB5SlS%2BxKQUHwrlRyS8eZrufXtuFaQfFD5wQRuoT/29wiSkpyHePg%2BQAV4T4LcBVArkdAYdSXz7PFUpWP6xcOR6TECIJFsO%2BAtBTgATwhngMQERG6hX%2B%2BWwqtI0JYkANgeUAWQnIGQDRA5QHc1GAgCqWrivOwLSVS//yPuIkXGBj3LklAqimQCAphYGyACvCYgBcHyA6jP8lXAQwApFzOm6aAbgBTWxhdXe8TAUg3MQAB46GXC5LpC43iEEsx9N2rfr4gAoSkHXBL/BH7Y%2BExADMN2/REeTA/NJGkBRCrrABY7Z8S58p%2BlBcZqq8h5zIRgEkFgIOCUMne8mRBGICrqCknxKAmUAD4AHCsAhT%2BiQAM44tnQRAADtt2l/Xhc/ZyA2gHMgmWIygE24eGMwAZiPo8jKjUQASZWQKwECZWDQBMQA0OtyoA4KAbBCKQEHRAA8CAAQsQHXCBNFYE4cgFPEC/RvISYgqILUIkABIKkScqNtaQrQBEQB9JeoEq8zB%2BqgEADxV8hdvRE53lAAyrR8EfBfGw8FEF8IuPIlkrJ4jzmUCtb7a8wJ3hwsA5gBOHIjdLghJgD0iQnSTAVgU74EhAMQef2uc6UmyZw3KAC0Yh8i4KqNkAQcU3OwNoBVJbagnG3TAFgRDzV2DRQFQJeac2AAhKqACABCNuAcWHwpRAUgthBwKhgxxQozAfHPpIijYBkQBiDu4pC7v3m6DqyBoj7oHlkMgMBloXAAMT7oVlxC%2BRoFQOgt7G6JHqOCIS7ICoAq07hMQJhqv7%2BKiyNKACaFBh4F10CosIqNI5MKQIwNlI/lEuOMH4CYDVBkZ4gJsAKYACiD3P01ARFYglBBcQAxPliWqIHCifXjxMXFeboUiPZBZzlMTAOjAfDumKVUwTAXDAUQaQMwGjh9LAKAWH2dXKSGmUAogMh%2B0NnZBZKs4DbgbFyKvkq%2BQQkgsh/sXxJQlXpdCgDOGydoVTCkF4wAsMIvtAxnCtwGziRY1JwwgOQgE9FAUW1xNq5ELglQA4i6QuzsRBDrheMAiNlAkkSfNmkBRNiAZBMQtoFH8YcXagJsAB4ogrsaYzVQVFycvZdR15gYAJixXZxYIRwLQK4NmNQAIi6QyjYB4SbrTOzxnWzTA1iJBfANiEyVYAPOAxkilqvm6AGE24Bz7mC0OhwAiL9ExNFp%2BhQIV8HqNsBFId%2BNEv4BUmGEH2C4BjIBgFkOOhPzEl5BeemvNgMAMGMAC%2B3miTUBcYPp52h4t24yAAhVQVdjIMw6akDAVUMTKVwDowDcCF1ygXDBOBMASq/wI5xnAWD%2BsRLN98C2LBMQtYH%2BBcJQALUPWFIgVAX7AMTWw%2BJNQNQGHiiRy8sRGhgFYDM6ewWvi56JlQCY5dZQmd5gAhBSDDu7g6RcFIGxgbh%2BMLwQjgawEl0GCC3bJJiAmA04VxzCAMyxAQgphkHKAPfuDjk2cCo6S0%2BbbACCKugAUCSaANDOi5BKKEoDGQA4dRDINdzIIbRj1lWYoJcwAwgujZdjTJb1%2BpUsG3AujwU/ZLbNCmAlqsz6xrY8ExDfKhUVpXOsAIJXSN06SAhAkgkIauyDKADzJiuAgAg4AiNyo0jIjRIyNowG14QiJYAFgKbL2SMrAUAgjDgA%2BGtBd0Hs6JREExBMMbcU9BdrUXVgHIAVluUWKBMQvW8g6iDn2AH4a0G3kRcRqUQTALpxIgDgtMkOwCcCbnoJ3degJQMQsoEIoYqWgBgAm1ECOyXTBGBuHwsU1BscAHwqCNEKUJgAEABfMxCtgXEAVihrDFATELSBiFWrOR4Avs1iEL1QyB5ZwwBVQWfBydsNhW4PSwZwt0K74MhtAtb0VQMSQP8ovQu3MRoYB8D7As7wjxYDYGQyhpHNGHA7ZsNP06zJBcArAv3gEnrQge9GCSOTn1xcXChkVMCHSYQlaowExEaApyHs78cXWRT3mYCayS91Fxe7jxayOth95A/DAMzzRYBXBACuCvifHpVH07dGF79LVfTGiVAAcRIQC2CTpsTgNgFjfGmxP7oTKpAKhlcrG5wAPCIAAcCjgdrRRXc81HVYAJ6PiJOAeAA3JAJQx59gAMuepysK2IAbAZeTL4smA/CUQuLrIV4TIAMAhYACo4JhLVtcGZQA4B7ogpBHA1WFnP/i0oQOA%2BBRSM96mxsA2Q9BAxh/5CFwVgWxgTAAJ9scAJoNe/x7CQ2vBgg8%2BpE0Ae1Fz/wXvXC2IQHM8wBodexx9z00oJYEyxOREoAGjA24D7jor6pYJ/DnvZPZYALw6/5hWR8w5bnwugQCQFV98ydFQGDHrP8wu2js9sazVQYA62cNPOxoEgfg2SPrlwCfCgp8iecwy4WCM4t8focFwBl8NAoUgDgNRCoI4oN%2BAFrGHeNsAHAAqFIAHAgAIBXyzy4DAZjA82AEgJ/9DwVg%2BtgYse51aNEPgCyF%2BB/Z7o8A4iUOwwZQfsk9GXoIgAdKTsVnayQBFN1RCAWgvoB/YhQBzJ6gB3Bk%2BABkiCAGoKrfehTUgLz7A4cvDR2ABBv8ggQwHuICGACcDfK6gIRCqHYJA1DCCiEdA3h92HWAWwpb1bC3FOa/dEmooOLrhm0AGgYwW4EBMP0a8RVbHM2QNR6DNUNYBa0j9DdDuiZuAu7jhJyL%2BE4jwNoLOO0wGmv/AtUOv44BoNkeDbTDqrgJBNrhv2zgwbEgQq6LASyIvOvOEMH02cBZlBUYwCUgAPGrYZQANuFWhIhCQFUe%2BSSAKAPglsQ2AAD0F8fFAdQIH1R8KyLouCFMwA8gdkGcFoD5%2BwqMBtSnscrp3mXxJVQF6EVxE/DtY6mdNiEA3K1AXRcoEiKgqoQPPNJ0QgKKUBdGYq%2BJ0QPorQ0DRABhAygHdFwLLZ31ZMARqEtjJ9swAG6QAESuXL5L5ICuapN9AksLY7qaKwKYgC8C5mEA9HLA3R8gcumW6IhVdJom7cvD3QXNyOlELyz%2B4oYeAJoMoAJg3zsAsEGCsAErBHK6Ulxc6i4WNVQEEQEgYALOg1R6AGbbUAD%2Bow6zRYawAUsFVD1jNVsZVfcEgIAJeLfI/DUUADsHpiH2CBGzLGqqtT8qkxkz9JyhkP8j/ph5%2ByipMoAOgFmD2SVG2IBNQLeXAXM5g1gKEDIB97YWC0DFBANgFYMQGyUrPyUBFLKqYR2uoY%2BR8y8e%2BUIYgC3Vc224CEANUfj2I34bsAjoY9ZOwazimX/xFQENJHYyUTRC9AA2I/Ze8K%2BK9YYd/4bvH6E2S28AAkA5ALJdvl6kGK9XBADglo0uAygBoBxw%2Byyh7fw0AETuzsfrVpQZQAtgE9%2BNIvRqjRMUAIBumdkABdBaibszm378NHn%2BIiZA3DRFmQG0AFAOnAK5bS4ZwCtCn%2B/k6U8oM4AawGYNYEEgaAMhA%2BbGyakNYACtFYB%2BmMoGREwALwfQZgA1APNu9K3psDYgwhfvlr9uQgNo9Z8rLnh/%2BwmZJkDcPt%2BGB/CfEA9QqJ%2BQaQL4gX//Cw/AvPsA5BEaiSZQFwegH6TOAAYAza8AauFkGxB7SI/zEJW2PABij70krpFHmYAIXqdYe3VVBoAnII8TTAIgkgHus57kANgCKAWTbQDkIT3LMgCY6xCV0GwCgCMAAFTlukwA6jdl2sDLIingPvJxx5QC4AzEAxW/kGkCziMf5QBYOwvwJKUkG3h9SrwMUA/IAdD8k/gjFBJtQCQD3Dro0JYcAF%2BBvGDjhDwTcMqA76/KAQBSCMTbwBGQByu/KgnAHR3gmZrxNnCkDgFgWQ4AxweFXjibYANij1M8xl4G8ACQaQNiJvAjdhdkA3AW4j0QsTYgcGWceP%2BBLADmb0EeLn5Ckgm4m%2BMPyQLg%2BqA0GxAzAacX/N6qLAAgPhhnAwLbozhdkA3AXQ3goZJxNiBG9gGHC7JpgHQbEDOB/pKwwjIlRgBJb/MStYHBmwAbgLV/AnnT0gk5JtC/eMnUCzICkG0DR0CerP5deSng2sDBy1JsYAgmwAhgS5O6KCS2HOQ8oGJZHgDZNgCyHKTsmBIB9G%2BpFSuGp6WYgKOB4zIBND%2BTenEEQgOZ1sPYAXwFoYKvn9gry0HsAPqLQoIq%2BK4EE3Bfi74sE4CrglKukR8F0cA1uQD6Kii0Mlz7At4Eao90Lg1kBdBfE0GZ9hN4GxAxgb/qqxPbagg7gKb7Pf9XAbcBgbSqnf6MTwOZAbgquHMJ2gZETGDWWbFm1UDmFHC%2BSF3%2B1wqwDQiYQO0fnCJdaZuSAZx1NmH82yVgGxAwgdn/6rdpzBrIDMARAVRw3a3A2gC/CdSubzkV2ne3ZAPAqCPf0c5pA/wmMNd27ZlVA5kBuKWQemGVPwTKoCZg3R%2BnuUclHQBmzR8Coati2/wB4CQmuwSwAzB/1a8EvrVj3q3xHvNPAffIVq7jgzokHwAJu3WjAmcDvDdK1ObbrjmzSwBHBDQ1XHLc47TCsFUxXhecve2WZ6zLYXwAXNrfXzVbv%2BHVQbAbJWrvtE0BCeAA4OSbvf7Oq4NlsBslrFtD1pzHUX5rEABc3IqJ4u3uDJQN8JnAzHUyKNklgCcC1jTi61ofVmBsgM8Eam%2B2ieKMvQrgAuBUAr3lRz4dDNoAnwnM2s8N/4xfAngA9DdM9r%2BvxVUPBm2AywRq19tEBrAuCHMDeJIj1x85kwDCBOwEwCbIIwE8ALDm9FovriQoQ5hALwGwKrcHBMBxnX7OcRUDARvY5isByDWaAxwSwAXAXRjsrz%2B1VtgJ%2BK%2BRc6yH1Xp3hzobd/gygA%2BA6Xzl95omZxL4beBl3gTAp4OjDuYEgK%2BR9n2n9YcZURtgN4GZX7ZDD2YQAPw5wOEE/mvkzOthPQewPEDTOVfDBAC4xuN86b23BW2AOQFO3o44GYMAgIXXCbsW89qIzwZYNbByvR1xKAMBsPqZHzuzF3ptgNUE%2Bg5oVWW6QBnIDQAVg87XOtw7jDLgtYGXWQWgEzgVXCbICwAHHq6%2B7r1d4bcBNhOonbwdmYwDAhACnlEGvDbAZgKuALidMBGKgwHg5gBRf7Z%2BM8NtA2wVwDttfKVOFcsAXgA49FTsPp1fVHhtgEUDa%2B933PPQ0gQzgBsAzgGi/mizCCFpAywmUHuzFazIuDOAG4BrPx72LEJI2gDDlXFCAHEc8mcAN4Dw727dpSdA2gC9CdROXm8TZ2FMNAP4AbjRZ5BteOvuJR4boDeBWWL%2BhAR%2BZ2vwAJw2nJRBROBmjcMGqK%2BMVz4i5u/s3c6pfJ2wGABz/W9D8dMTIGxgm2f%2BZsMJQoEMEADg5oBvb2LrNzVWG6A1gco75PybABIoAoCUQc/rKzqUBLANUJpA5Z1OxBm4PhQAa7/CEbjKQQDbAJ0J%2BOaPToAhWgSIAXBLgUAI0hHANkBlAv75N78aA8gAEQA4BwIi1KFSwjKLCVQ%2B6vi%2B3fFAEQkUA4CTMHAOEIEKvQ0ka2AtMP/mE%2Bc9Ytr3G8MC4IaAHjgJrZuXKrQ2kGwCtVmP//UCAEICxQAQMpgNpGHrDz%2BbobSBRBOYeeOXbTMqAIQkUBCAuyQdEgJm696HM3QAkkxg5s3bbTMyALLLq0MDQAhRMAQQgavxQuDsmI03gVrlfHD%2BOAAMIQkUBeC2Y1YIBE9E5%2BalGYods7EmMDPrlz9PAIh5oDAA5IQ4BEK0uPOH2DQoJ5vAzJu/7ISB1/TwImzQAJATuiHwNORI4tOgd%2BNEjAmEhr9lPwUcAE1zmACIYkh7NbQn79z82UwUgt6NE5EmUJt5Iyz8rTbQyTy%2BTRGQANyWFKlR%2BA1rHRQEM3E2EGUCM%2Bj0dyLqD%2Bc11QIrIUAAmp%2B6b03Xvhuux63OzV%2BEI%2BjZQLgJzFTe/6jTDi8/3LxjvksQHoC56oaAqkQ5cquN8mAmygbCTGAGRX%2BrHcF8x2kDeS%2BJgwIgQ%2BBQpCJ37l0LQ1AONwE0/Wvh0e%2B1QIAAEAdAhkA2RpIRApQIlaAN%2BE0A/dD7MdM3G64FQgQAAAAiBIzxTswZ6bRvXr0842Fg2YDHBGozM6fOf9TqxH6dChgAAADIENDiG5NOZ/PaIgrwGdIGsAlY/7F4baPTifXdz8cgAwACADonBtbB%2BN681encunb1Z9ZcZ/qrYjYA%2B%2B9vnL92qxOh/EQCGJABAAHACgH3pIw/SzooxODerWvXri7a80YuaJFYPH/t2q3bSbO3YLsKCFADQAForuMQ0CZpanP7xda3bt289nGxePPaR7duWX9vU3wVkQDxgjNQAERpaiUBfXHe6tw%2BXtyimnkwAYS7AEAAhDWjJLjPcGI2fnf4HkOo3XeboIjma1gAcHtqOwH9kW1%2B/sMNhlRbwJEW2n4PDQAZAurYq/QENv%2BHAcAaToAcE%2BYBACDqcxScDDJwj/5tII2vJzBlZRlm/lAAUIeGo1N74T59eLZZBAB/xXd2zL0FAFkhPj3ZQ8%2BAzg9ZAWABQEEG9gVQAMgeJWdkfrADTKC5/jkWAFUBUkBIAOb6PyuYgPIqLIHm%2BhNNzXEZzcAANO/jJMjpyjIogbUnEwqRAB/DfTYcALJMQydpfHkL7ihXn2ABtHx2y9yLAEyiTrGsYBnsMFd3CuQnH4IMLkgAzfsv4SRQs/nlJsyBNp4WxoyclASABeBJAovAOkgWrO6ezeCPRfq6Ze5VAOb6JxkdHyqKAXECzdWdhQyJdRLWX2ABNO%2BfVQgCmbywFzTXdgrk/LX8LmyFAQvAbOwQXmjHwI5QyYL8n5y/1Wc0zL0MwOrYVC%2BBpwJH3PjUO3%2BrwDL3NoDm%2BidZ8oizyg92G7xB27h/h9T/nJqZhC6xwQFYy5bYs62kVSZ3%2Beywubq7oHnmL6PJAgdgNnYLXgJj%2BY950qCx/nRBUzyf9MJ6w9z7AMzG1y95jlvP5P9ut8l46M3GLkp/1TP/8eUt83kA4O1cbDtUJj99xqIEzcanzxb0jOHhCNxfSQRg9a5eAlomf353ixZBs7G2%2B%2BtClkx/q7/8oYz5SwFgWYFGRm9ORUFQvECHoNlY3X2yoHnC35r/5FMZ85cDAFnB77wErCAwJpcRggQtaKCzv7NQyCie05/TxyafSZm/JADWCp6PgGpkEYILu88a0Qyajcanu1%2Bj6Y8Z3t%2B15t8wnycAqCvwepgVBBaC4uLu7tNGCAQ0%2BUZrd/fXCwX0U97Tb81/V9L8pQFAVVyAgI1AzU/%2BfHf3WbvhG2v3rdkXDXT2vdPv1VKy5i8PACLwiTbmmwtCoGcyRn5yEUFAo2MP%2B493Fq3ZB6cvef4SAaBO5s5LAQJIC1AYII0rFicXe%2BP8Ipp7AamkNXvd//Oom/iLZ/LmLxMAUkKrlwtMCYWBoSMI9oStodl/RmQCtCz/zF94KnH%2BUgH0unklOC07Dgx3wr2/6GE/hsroZanzlwvAbK49WwgKgScWIqbuhP/kupT6b1AArJ7mk4KvqKMdKPxV3lZ6zwCwzOCJVdazI7AaiOVnDcnzlw/AbKxZjZ1qME5fz1jh35B%2BePIBWGlwp6hlDAYEBqqHrEWEVXMUAFiLO7uLhQw1AqtSyE/ef9oYxLENBAAKgvtWi4cSQU%2BWPrtr%2Bni3sWqODgAUBKtWl4u6fCOOgfW/qDyy%2B%2BYBHdigADgIdCsMwnPBsBsFJY/O/taATv9AAdhLPbtXrTDo1b2%2BStDI2S3C4v1BTn%2BgAOye//7uzuJCweqHMmO4ErQ7AyNfXFy3FkxWB3lMAwVgL3mtosb/Kur/8mjqGXugCCgUi4vnUVPcbDQGfECDBmAzsJZ%2BrBWAq/2GuLc60GkM%2BOQPC0CPQaOx1rlvL4XsPuv01oeGcijDAeCuAjpjeEcxRAB7Y6QAUgApgBRACiAFkAJIAQyzGNzHAD61W4H9C6D5FeqJ84d29i%2BAP1nLAQf2MYCvFMMw9jMA661lagogBZACSAGkAFIAKYAUQAogBZACSAGkAFIAKYAUQApgHwFIl8T2%2B6Lo59aDlSe39i0Ac92%2BMLK6fwHs%2B0tje2CkAFIAKYAUQAogBZACSAGkAFIAKYAUQAogBZACSAGkAFIAKYAUQAogBZACSAGkAFIAKYAUQAogBZACSAGkAFIAKYAUQAogBZACSAGM7Ph/mR6R2jpBbMgAAAAASUVORK5CYII%3D%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#0C1120; --surface:#151D31; --surface2:#1B2540; --ink:#E9EEF8; --muted:#8FA0BF;
+  --line:#263250; --accent:#E0B54F; --accent-ink:#141005; --accent-weak:#2E2914; --accent-line:#57491F;
+  --gain:#4CC38A; --loss:#F2846B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0; overscroll-behavior:none; overflow-x:hidden}
+body{background:var(--bg); color:var(--ink); font-family:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; min-height:100vh; min-height:100dvh; padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right); -webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:"Sora",sans-serif; margin:0}
+button{font:inherit; cursor:pointer}
+input,select{font:inherit; color:var(--ink)}
+.mono{font-family:"JetBrains Mono",Menlo,monospace}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+/* ---- écran d'authentification ---- */
+.authwrap{min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+.authcard{width:min(440px,96vw); background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:26px 24px; box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.brand{display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:4px}
+.brand img{width:44px; height:44px; border-radius:12px}
+.brand .name{font-family:"Sora",sans-serif; font-weight:700; font-size:26px; letter-spacing:-.01em}
+.brand .name .dot{color:var(--accent)}
+.tagline{text-align:center; color:var(--muted); font-size:13.5px; margin-bottom:18px}
+.tabs{display:flex; background:var(--surface2); border-radius:12px; padding:4px; margin-bottom:18px}
+.tabs button{flex:1; border:0; background:none; color:var(--muted); font-weight:600; padding:9px; border-radius:9px}
+.tabs button[aria-selected="true"]{background:var(--accent-weak); color:var(--accent)}
+.field{margin-bottom:12px}
+.field label{display:block; font-size:12.5px; font-weight:700; color:var(--muted); margin-bottom:5px}
+.field input, .field select{width:100%; background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:11px 12px; font-size:15px}
+.field .hint{font-size:11.5px; color:var(--muted); margin-top:4px}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.pwwrap{position:relative}
+.pwwrap .toggle{position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:0; color:var(--muted); font-size:13px; padding:6px}
+.opts{display:flex; flex-direction:column; gap:10px; margin:6px 0 16px}
+.opt{display:flex; gap:10px; align-items:flex-start; font-size:13.5px; color:var(--ink)}
+.opt input{margin-top:2px; width:auto; accent-color:var(--accent)}
+.opt .sub{color:var(--muted); font-size:12px}
+.btn{width:100%; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); border-radius:11px; padding:12px; font-weight:700; font-size:15px}
+.btn:disabled{opacity:.55; cursor:default}
+.btn.ghost{background:none; color:var(--ink); border-color:var(--line); font-weight:600}
+.btn.faceid{background:var(--surface2); color:var(--ink); border-color:var(--line); margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px}
+.sep{display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; margin:14px 0}
+.sep::before,.sep::after{content:""; flex:1; height:1px; background:var(--line)}
+.msg{border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:14px; display:none}
+.msg.err{background:var(--loss); color:#2a0f0a; display:block}
+.msg.ok{background:var(--gain); color:#062015; display:block}
+.msg.info{background:var(--accent-weak); border:1px solid var(--accent-line); color:var(--ink); display:block}
+.foot{text-align:center; color:var(--muted); font-size:11.5px; margin-top:16px; line-height:1.5}
+/* ---- vue connectée (placeholder, à compléter) ---- */
+#app{display:none; padding:max(16px,env(safe-area-inset-top)) 16px max(72px,env(safe-area-inset-bottom)); max-width:1100px; margin:0 auto}
+.topbar{display:flex; align-items:center; gap:14px; padding:12px 4px; border-bottom:1px solid var(--line); margin-bottom:20px; flex-wrap:wrap}
+.topbar .name{font-family:"Sora",sans-serif; font-weight:700; font-size:20px}
+.topbar .name .dot{color:var(--accent)}
+.topbar .grow{flex:1}
+.who{color:var(--muted); font-size:13.5px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px}
+.hero .lab{font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:700}
+.hero .val{font-family:"JetBrains Mono",monospace; font-size:34px; font-weight:600; margin-top:4px}
+/* badges topbar */
+.savebadge,.ratechip{border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-size:12px; font-family:"JetBrains Mono",monospace; white-space:nowrap}
+.savebadge{color:var(--muted); background:var(--surface2)}
+.ratechip{color:var(--accent); background:var(--accent-weak); border-color:var(--accent-line)}
+/* suivi */
+#view{display:grid; gap:14px}
+.viewhead{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.viewhead h2{font-size:20px}
+.viewhead .grow{flex:1}
+.btn.small{width:auto; padding:8px 13px; font-size:14px}
+.hero .alt{color:var(--muted); font-size:14px; margin-top:2px; font-family:"JetBrains Mono",monospace}
+.hero .pnl{font-weight:700; margin-top:8px}
+.up{color:var(--gain)} .down{color:var(--loss)}
+.tablewrap{overflow-x:auto}
+table.list{width:100%; border-collapse:collapse; font-size:14px}
+table.list th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); font-weight:700}
+table.list td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle}
+table.list td.num,table.list th.num{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+table.list td.num{font-family:"JetBrains Mono",monospace}
+tr.grouphead td{background:var(--surface2); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.04em}
+tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:7px}
+.pill{display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; background:var(--surface2); color:var(--muted)}
+.rowbtn{background:none; border:0; color:var(--muted); cursor:pointer; font-size:15px; padding:2px 5px}
+.rowbtn:hover{color:var(--ink)}
+.empty{padding:34px 16px; text-align:center; color:var(--muted)}
+.empty .big{font-size:34px; margin-bottom:8px}
+.frow{display:grid; gap:10px}
+.frow.c4{grid-template-columns:repeat(4,1fr)} .frow.c3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:720px){.frow.c4,.frow.c3{grid-template-columns:1fr 1fr}}
+.mut{color:var(--muted); font-size:12.5px}
+/* onglets appli connectee */
+.apptabs{display:flex; gap:6px; background:var(--surface2); border-radius:12px; padding:5px; margin-bottom:18px; max-width:520px}
+.apptabs button{flex:1; border:0; background:none; color:var(--muted); font-weight:700; padding:9px; border-radius:9px; font-size:14px}
+.apptabs button[aria-selected="true"]{background:var(--accent-weak); color:var(--accent)}
+/* allocation donut */
+.donut{width:104px; height:104px; border-radius:50%; position:relative; flex:none}
+.donut .donuthole{position:absolute; inset:15px; border-radius:50%; background:var(--surface)}
+/* marche */
+.mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+@media(max-width:640px){.mgrid{grid-template-columns:1fr}}
+.mcard{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px}
+.mlab{font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; margin-bottom:8px}
+.mprice{font-family:"JetBrains Mono",monospace; font-size:24px; font-weight:600}
+.fngval{font-family:"JetBrains Mono",monospace; font-size:40px; font-weight:600; line-height:1}
+.fngmax{font-size:16px; color:var(--muted)}
+.fngtrack{position:relative; height:12px; border-radius:99px; margin:14px 0 10px; background:linear-gradient(90deg,#F2846B,#E0B54F,#4CC38A)}
+.fngmark{position:absolute; top:-4px; margin-left:-3px; width:6px; height:20px; border-radius:3px; background:#fff; box-shadow:0 0 0 2px var(--surface)}
+.tlist{display:flex; flex-direction:column; gap:9px}
+.trow{display:flex; align-items:center; gap:9px; font-size:14px}
+.trow .rank{color:var(--accent); font-family:"JetBrains Mono",monospace; font-size:12px; width:16px}
+/* saisie rapide + verrouillage */
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px}
+.chip{border:1px solid var(--line); background:var(--surface2); color:var(--ink); border-radius:99px; padding:7px 13px; font-size:13px; font-weight:600}
+.chip:hover{border-color:var(--accent); color:var(--accent)}
+.secrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:2px}
+.envbar{margin-bottom:11px}
+.envbar .top{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px}
+.envtrack{height:8px; background:var(--surface2); border-radius:99px; overflow:hidden}
+.envtrack > div{height:100%; background:var(--accent); border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- ================= AUTHENTIFICATION ================= -->
+<div class="authwrap" id="auth">
+  <div class="authcard">
+    <div class="brand"><svg class="logo" viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"><rect width="180" height="180" rx="40" fill="#1B2540"/><circle cx="90" cy="90" r="58" fill="none" stroke="#57491F" stroke-width="4"/><circle cx="90" cy="90" r="7" fill="#E0B54F"/><polygon points="90,32 106,90 90,82 74,90" fill="#E0B54F"/><polygon points="90,148 74,90 90,98 106,90" fill="#8FA0BF"/></svg><span class="name">Boussole<span class="dot">.</span></span></div>
+    <div class="tagline">Tous tes investissements au meme endroit : PEA, actions, ETF, Bitcoin, or.</div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-login" aria-selected="true" onclick="UI.tab('login')">Connexion</button>
+      <button role="tab" id="tab-signup" aria-selected="false" onclick="UI.tab('signup')">Creer un compte</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <!-- Connexion -->
+    <form id="form-login" onsubmit="return Auth.login(event)">
+      <div class="field"><label for="l-email">Email, pseudo ou telephone</label><input id="l-email" type="text" autocomplete="username" required></div>
+      <div class="field"><label for="l-pw">Mot de passe</label>
+        <div class="pwwrap"><input id="l-pw" type="password" autocomplete="current-password" required><button type="button" class="toggle" onclick="UI.eye('l-pw',this)">voir</button></div>
+      </div>
+      <div class="opts">
+        <label class="opt"><input type="checkbox" id="l-remember" checked> <span>Se souvenir de moi sur cet appareil</span></label>
+      </div>
+      <button class="btn" type="submit">Se connecter</button>
+      <button class="btn faceid" type="button" id="faceBtn" onclick="Auth.faceId()" style="display:none">🙂 Se connecter avec Face ID</button>
+    </form>
+
+    <!-- Inscription -->
+    <form id="form-signup" onsubmit="return Auth.signup(event)" style="display:none">
+      <div class="row2">
+        <div class="field"><label for="s-first">Prenom</label><input id="s-first" autocomplete="given-name" required></div>
+        <div class="field"><label for="s-last">Nom</label><input id="s-last" autocomplete="family-name" required></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="s-pseudo">Pseudo</label><input id="s-pseudo" required><div class="hint">modifiable plus tard</div></div>
+        <div class="field"><label for="s-dob">Date de naissance</label><input id="s-dob" type="date"></div>
+      </div>
+      <div class="field"><label for="s-email">Email</label><input id="s-email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="s-phone">Telephone <span class="sub" style="color:var(--muted);font-weight:400">(facultatif, pour se connecter avec)</span></label><input id="s-phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="06 12 34 56 78"></div>
+      <div class="field"><label for="s-pw">Mot de passe</label>
+        <div class="pwwrap"><input id="s-pw" type="password" autocomplete="new-password" required oninput="UI.pwStrength()"><button type="button" class="toggle" onclick="UI.eye('s-pw',this)">voir</button></div>
+        <div class="hint" id="pw-hint">au moins 8 caracteres</div>
+      </div>
+      <div class="field"><label for="s-pw2">Confirmer le mot de passe</label>
+        <div class="pwwrap"><input id="s-pw2" type="password" autocomplete="new-password" required><button type="button" class="toggle" onclick="UI.eye('s-pw2',this)">voir</button></div>
+      </div>
+      <div class="opts">
+        <label class="opt"><input type="checkbox" id="s-remember" checked> <span>Se souvenir de moi sur cet appareil</span></label>
+        <label class="opt"><input type="checkbox" id="s-faceid"> <span>Activer Face ID<span class="sub"> (proposé après ta premiere connexion)</span></span></label>
+      </div>
+      <button class="btn" type="submit">Creer mon compte</button>
+      <div class="foot">Ton mot de passe est stocke <b>hache</b> (bcrypt) : personne, meme pas nous, ne peut le lire. Tes donnees ne servent qu'a ton suivi perso.</div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= VERROUILLAGE APPAREIL ================= -->
+<div class="authwrap" id="lock" style="display:none">
+  <div class="authcard" style="text-align:center">
+    <div class="brand" style="justify-content:center"><svg viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"><rect width="180" height="180" rx="40" fill="#1B2540"/><circle cx="90" cy="90" r="58" fill="none" stroke="#57491F" stroke-width="4"/><circle cx="90" cy="90" r="7" fill="#E0B54F"/><polygon points="90,32 106,90 90,82 74,90" fill="#E0B54F"/><polygon points="90,148 74,90 90,98 106,90" fill="#8FA0BF"/></svg><span class="name">Boussole<span class="dot">.</span></span></div>
+    <div class="tagline" id="lock-who">Application verrouillee</div>
+    <div class="msg" id="lock-msg"></div>
+    <button class="btn faceid" id="lock-bio" onclick="Lock.unlockBio()" style="display:none">🙂 Deverrouiller avec Face ID</button>
+    <div id="lock-code" style="display:none">
+      <div class="field"><label for="lock-code-input">Code</label><input id="lock-code-input" type="password" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')Lock.unlockCode()"></div>
+      <button class="btn" onclick="Lock.unlockCode()">Deverrouiller</button>
+    </div>
+    <button class="btn ghost" style="margin-top:12px" onclick="Lock.usePassword()">Utiliser le mot de passe</button>
+  </div>
+</div>
+
+<!-- ================= VUE CONNECTEE (a completer avec le suivi complet) ================= -->
+<div id="app">
+  <div class="topbar">
+    <span class="name">Boussole<span class="dot">.</span></span>
+    <span class="savebadge" id="savebadge">Sauvegarde…</span>
+    <span class="ratechip" id="ratechip">1 € = 1,16 $</span>
+    <div class="grow"></div>
+    <span class="who" id="who"></span>
+    <button class="btn ghost" style="width:auto; padding:7px 12px" onclick="App.refreshRate(true)">↻ cours €/$</button>
+    <button class="btn ghost" style="width:auto; padding:7px 12px" onclick="Auth.logout()">Deconnexion</button>
+  </div>
+  <nav class="apptabs" id="apptabs">
+    <button data-tab="portfolio" aria-selected="true" onclick="App.go('portfolio')">Portefeuille</button>
+    <button data-tab="marche" aria-selected="false" onclick="App.go('marche')">Marche</button>
+    <button data-tab="profil" aria-selected="false" onclick="App.go('profil')">Profil</button>
+  </nav>
+  <main id="view"></main>
+</div>
+
+<!-- supabase-js : chargé depuis un CDN autorisé -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+"use strict";
+/* ================= CONFIG =================
+   Ces deux valeurs viennent de TON projet Supabase (gratuit). Elles seront
+   renseignées automatiquement une fois ta base créée. La clé "anon" est
+   PUBLIQUE par nature (elle n'ouvre rien sans mot de passe : la sécurité
+   vient du hachage des mots de passe et de l'isolation par utilisateur). */
+const CONFIG = {
+  SUPABASE_URL: "https://smmaxgjxsisoxqlpoopi.supabase.co",   // projet Boussole de Paul-Emile
+  SUPABASE_ANON: "sb_publishable_LukrhbQ8jcGO_ckGMr0y7A_HOep8j35"   // clé PUBLIQUE (publishable)
+};
+let sb = null;
+if(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON && window.supabase){
+  sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+}
+const $ = id => document.getElementById(id);
+function showMsg(text, kind){ const m=$("msg"); m.textContent=text; m.className="msg "+(kind||"info"); }
+function clearMsg(){ const m=$("msg"); m.className="msg"; m.textContent=""; }
+
+const UI = {
+  tab(which){
+    const login = which==="login";
+    $("tab-login").setAttribute("aria-selected", login);
+    $("tab-signup").setAttribute("aria-selected", !login);
+    $("form-login").style.display = login ? "block":"none";
+    $("form-signup").style.display = login ? "none":"block";
+    clearMsg();
+  },
+  eye(id, btn){ const el=$(id); const show=el.type==="password"; el.type=show?"text":"password"; btn.textContent=show?"cacher":"voir"; },
+  pwStrength(){
+    const v=$("s-pw").value, h=$("pw-hint");
+    if(v.length<8){ h.textContent="au moins 8 caracteres ("+v.length+"/8)"; h.style.color="var(--muted)"; }
+    else { const strong=/[A-Z]/.test(v)&&/[0-9]/.test(v)&&v.length>=10; h.textContent = strong?"bon mot de passe ✓":"correct (astuce : plus long + chiffres/majuscules)"; h.style.color= strong?"var(--gain)":"var(--muted)"; }
+  }
+};
+
+function ensureBackend(){
+  if(!sb){ showMsg("La base n'est pas encore connectée. Elle le sera dès que ton Supabase gratuit sera créé ; ensuite l'inscription et la connexion marcheront ici même.", "info"); return false; }
+  return true;
+}
+
+async function ensureProfile(userId, pseudo, phone){
+  if(!sb||!userId) return;
+  try{ await sb.from("profiles").upsert({ user_id:userId, pseudo:pseudo||null, phone:phone||null, updated_at:new Date().toISOString() }); }catch(_){ }
+}
+async function libreRpc(fn, val){
+  try{ const { data, error } = await sb.rpc(fn, { p: val }); if(error) return true; return data!==false; }catch(_){ return true; }
+}
+
+const Auth = {
+  async signup(e){
+    e.preventDefault(); clearMsg();
+    const first=$("s-first").value.trim(), last=$("s-last").value.trim(), pseudo=$("s-pseudo").value.trim();
+    const phone=($("s-phone").value||"").replace(/\s/g,"") || null;
+    const dob=$("s-dob").value || null;
+    let age=null;
+    if(dob){ const bd=new Date(dob), now=new Date(); age=now.getFullYear()-bd.getFullYear(); const mm=now.getMonth()-bd.getMonth(); if(mm<0||(mm===0&&now.getDate()<bd.getDate())) age--; if(age<0||age>130) age=null; }
+    const email=$("s-email").value.trim(), pw=$("s-pw").value, pw2=$("s-pw2").value;
+    if(!pseudo){ showMsg("Choisis un pseudo.","err"); return false; }
+    if(pw.length<8){ showMsg("Le mot de passe doit faire au moins 8 caracteres.","err"); return false; }
+    if(pw!==pw2){ showMsg("Les deux mots de passe ne correspondent pas.","err"); return false; }
+    if(!ensureBackend()) return false;
+    try{
+      if(!(await libreRpc("pseudo_libre", pseudo))){ showMsg("Ce pseudo est deja pris, choisis-en un autre.","err"); return false; }
+      if(phone && !(await libreRpc("phone_libre", phone))){ showMsg("Ce numero de telephone est deja utilise.","err"); return false; }
+      const { data, error } = await sb.auth.signUp({
+        email, password: pw,
+        options:{ data:{ first_name:first, last_name:last, pseudo, age, dob, phone } }
+      });
+      if(error) throw error;
+      if(data.session){ await ensureProfile(data.user.id, pseudo, phone); onLogin(data.session); }
+      else { showMsg("Compte cree ! Verifie ta boite mail pour confirmer, puis connecte-toi.","ok"); UI.tab("login"); }
+    }catch(err){ showMsg(traduire(err.message||"Inscription impossible."),"err"); }
+    return false;
+  },
+  async login(e){
+    e.preventDefault(); clearMsg();
+    if(!ensureBackend()) return false;
+    const id=$("l-email").value.trim(), pw=$("l-pw").value;
+    try{
+      let email=id;
+      if(!/@/.test(id)){
+        let found=null;
+        try{ const { data } = await sb.rpc("email_par_identifiant",{p:id}); found=data||null; }catch(_){ found=null; }
+        if(!found){ showMsg("Pseudo ou numero inconnu. Verifie, ou connecte-toi avec ton email.","err"); return false; }
+        email=found;
+      }
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+      if(error) throw error;
+      if(!$("l-remember").checked){ try{ sessionStorage.setItem("boussole-session-only","1"); }catch(_){ } }
+      onLogin(data.session);
+    }catch(err){ showMsg(traduire(err.message||"Connexion impossible."),"err"); }
+    return false;
+  },
+  async faceId(){ showMsg("Face ID sera propose apres ta premiere connexion (via une cle d'acces securisee).","info"); },
+  async logout(){ if(sb) await sb.auth.signOut(); location.reload(); }
+};
+
+function traduire(m){
+  m=String(m);
+  if(/already registered|already exists/i.test(m)) return "Un compte existe deja avec cet email. Connecte-toi.";
+  if(/Invalid login credentials/i.test(m)) return "Email ou mot de passe incorrect.";
+  if(/Email not confirmed/i.test(m)) return "Confirme d'abord ton email (lien recu par mail).";
+  if(/rate limit/i.test(m)) return "Trop d'essais, reessaie dans une minute.";
+  return m;
+}
+
+/* ================= SUIVI (connecté, sauvegarde par compte) ================= */
+const eurF=new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"});
+const usdF=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
+const CLS={ etf:{l:"ETF",c:"#4E8BEF"}, action:{l:"Actions",c:"#18A886"}, crypto:{l:"Crypto",c:"#9B70EE"}, or:{l:"Or",c:"#E0B54F"}, autre:{l:"Autre / cash",c:"#8091A9"} };
+const ORDER=["etf","action","crypto","or","autre"];
+const ENVS=["PEA","CTO","Assurance-vie","PER","Plateforme crypto","Cold wallet","Livret / cash","Autre"];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function setBadge(state){ const el=$("savebadge"); if(!el) return; const m=({pending:["Sauvegarde…","var(--muted)"],ok:["✓ Sauvegardé","var(--gain)"],err:["⚠ non sauvegardé","var(--loss)"]})[state]||["",""]; el.textContent=m[0]; el.style.color=m[1]; }
+function applyRate(r){ const el=$("ratechip"); if(el) el.textContent="1 € = "+(r||1.16).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:3})+" $"; }
+
+const COINS={btc:"bitcoin",xbt:"bitcoin",eth:"ethereum",sol:"solana",ada:"cardano",xrp:"ripple",bnb:"binancecoin",doge:"dogecoin",dot:"polkadot",matic:"matic-network",pol:"matic-network",ltc:"litecoin",link:"chainlink",avax:"avalanche-2",atom:"cosmos",uni:"uniswap",trx:"tron",xlm:"stellar",algo:"algorand",xmr:"monero",bch:"bitcoin-cash",near:"near",apt:"aptos",arb:"arbitrum",op:"optimism",sui:"sui",shib:"shiba-inu",pepe:"pepe",ton:"the-open-network"};
+function coinId(p){ const t=(p.ticker||"").toLowerCase().trim(), n=(p.name||"").toLowerCase().trim(); return COINS[t]||COINS[n]||null; }
+
+const App = {
+  tab:"portfolio", email:"", meta:{}, lastSync:0,
+  S:{positions:[], rate:1.16, snapshots:[], tdKey:""}, userId:null, saveTimer:null, FORM:null,
+  async start(session){
+    this.userId=session.user.id;
+    this.email=session.user.email||"";
+    this.meta=session.user.user_metadata||{};
+    $("who").textContent=(this.meta.pseudo||this.meta.first_name||this.email);
+    ensureProfile(this.userId, this.meta.pseudo, this.meta.phone);
+    $("auth").style.display="none"; $("app").style.display="block";
+    await this.load(); applyRate(this.S.rate); this.go("portfolio"); this.refreshRate(); this.save();
+  },
+  async load(){
+    try{ const { data, error } = await sb.from("portfolios").select("data").eq("user_id",this.userId).maybeSingle();
+      if(!error && data && data.data){ const d=data.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; } }catch(e){}
+  },
+  recordSnapshot(){
+    if(!this.S.snapshots) this.S.snapshots=[];
+    const val=this.totals().val, d=new Date().toISOString().slice(0,10);
+    const arr=this.S.snapshots, last=arr[arr.length-1];
+    if(last && last.d===d) last.v=val; else arr.push({d,v:val});
+    if(arr.length>400) arr.splice(0, arr.length-400);
+  },
+  save(){
+    this.recordSnapshot();
+    setBadge("pending"); clearTimeout(this.saveTimer);
+    this.saveTimer=setTimeout(async()=>{
+      try{ const { error } = await sb.from("portfolios").upsert({ user_id:this.userId, data:{positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", savedAt:Date.now()}, updated_at:new Date().toISOString() });
+        setBadge(error?"err":"ok"); }catch(e){ setBadge("err"); }
+    },600);
+  },
+  async refreshRate(force){
+    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur,usd",{cache:"no-store"}); const j=await r.json(); const b=j&&j.bitcoin;
+      if(b&&b.eur>0&&b.usd>0){ this.S.rate=b.usd/b.eur; applyRate(this.S.rate); this.save(); this.render(); } }catch(e){ if(force) applyRate(this.S.rate); }
+  },
+  toEur(v,cur){ return cur==="USD" ? v/(this.S.rate||1.16) : v; },
+  totals(){ let val=0,cost=0; const byCls={}; for(const p of this.S.positions){ const q=+p.qty||0; const ve=this.toEur(q*(+p.price||0),p.cur); val+=ve; cost+=this.toEur(q*(+p.pru||0),p.cur); byCls[p.cls]=(byCls[p.cls]||0)+ve; } return {val,cost,pnl:val-cost,byCls}; },
+  go(t){
+    this.tab=t; this.FORM=null;
+    const nav=$("apptabs"); if(nav) for(const b of nav.children) b.setAttribute("aria-selected", b.dataset.tab===t);
+    this.render();
+    if(t==="marche") Market.load();
+  },
+  render(){
+    if(this.tab==="marche") return this.renderMarche();
+    if(this.tab==="profil") return this.renderProfil();
+    this.renderPortfolio();
+  },
+  renderMarche(){
+    $("view").innerHTML=`<div class="viewhead"><h2>Marche</h2><div class="grow"></div><button class="btn small ghost" onclick="Market.load(true)">↻ Actualiser</button></div><div id="marche"><div class="mut">Chargement des indicateurs en direct…</div></div>`;
+  },
+  renderProfil(){
+    const m=this.meta;
+    $("view").innerHTML=`<div class="card" style="max-width:520px">
+      <h2 style="margin-bottom:14px">Profil</h2>
+      <div class="field"><label>Pseudo (modifiable)</label><input id="pf-pseudo" value="${esc(m.pseudo||"")}"></div>
+      <div class="field"><label>Telephone (modifiable, sert a se connecter)</label><input id="pf-phone" type="tel" inputmode="tel" value="${esc(m.phone||"")}" placeholder="06 12 34 56 78"></div>
+      <div class="mut" style="margin:2px 0 16px">${esc(((m.first_name||"")+" "+(m.last_name||"")).trim())}${m.age?" · "+m.age+" ans":""}${m.dob?" · ne(e) le "+m.dob.split("-").reverse().join("/"):""}<br>${esc(this.email)}</div>
+      <button class="btn small" onclick="App.saveProfil()">Enregistrer</button>
+      <div class="mut" style="margin-top:16px">Tes donnees sont sauvegardees sur ton compte. Deconnexion en haut a droite.</div>
+    </div>
+    <div class="card" style="max-width:520px; margin-top:14px">
+      <div class="mlab" style="margin-bottom:6px">Verrouillage sur cet appareil</div>
+      <div class="mut" style="margin-bottom:12px">Protege l'ouverture de l'appli sur ce telephone avec Face ID (ou un code). Ton mot de passe reste le moyen de secours.</div>
+      ${Lock.exists()
+        ? `<div style="margin-bottom:12px">Actif : <b style="color:var(--gain)">${Lock.get().type==="faceid"?"Face ID / Touch ID":"code"}</b></div><button class="btn small ghost" onclick="App.disableLock()">Desactiver</button>`
+        : `<div class="secrow">${Lock.bioAvailable()?`<button class="btn small" onclick="App.enableBio()">Activer Face ID / Touch ID</button>`:""}<button class="btn small ghost" onclick="App.enableCode()">Definir un code</button></div>${Lock.bioAvailable()?"":`<div class="mut" style="margin-top:8px;font-size:11.5px">Face ID apparaitra une fois l'appli en ligne (HTTPS).</div>`}`}
+    </div>
+    <div class="card" style="max-width:520px; margin-top:14px">
+      <div class="mlab" style="margin-bottom:10px">Donnees et cours des actions</div>
+      <div class="secrow" style="margin-bottom:14px">
+        <button class="btn small ghost" onclick="App.exportData()">Exporter mes donnees</button>
+        <button class="btn small ghost" onclick="document.getElementById('importfile').click()">Importer un fichier</button>
+        <input type="file" id="importfile" accept="application/json,.json" style="display:none" onchange="App.importData(event)">
+      </div>
+      <a class="btn small ghost" href="https://twelvedata.com/register" target="_blank" rel="noopener" style="display:inline-block;text-align:center;text-decoration:none;margin-bottom:10px">Creer ma cle gratuite sur Twelve Data ↗</a>
+      <div class="field"><label for="pf-tdkey">Cle Twelve Data (optionnel, actualise actions et ETF)</label><input id="pf-tdkey" value="${esc(this.S.tdKey||"")}" placeholder="colle ta cle ici"></div>
+      <button class="btn small" onclick="App.saveTdKey()">Enregistrer la cle</button>
+      <div class="mut" style="margin-top:8px;font-size:11.5px">Une seule fois : tu colles la cle ici, elle reste sur ton compte pour tous tes appareils. Sans cle, tu tapes les prix actions/ETF a la main.</div>
+    </div>`;
+  },
+  async saveProfil(){
+    const v=$("pf-pseudo").value.trim(); if(!v){ alert("Choisis un pseudo."); return; }
+    const ph=($("pf-phone").value||"").replace(/\s/g,"") || null;
+    if(v.toLowerCase()!==String(this.meta.pseudo||"").toLowerCase() && !(await libreRpc("pseudo_libre", v))){ alert("Ce pseudo est deja pris, choisis-en un autre."); return; }
+    if(ph && ph!==(this.meta.phone||null) && !(await libreRpc("phone_libre", ph))){ alert("Ce numero de telephone est deja utilise."); return; }
+    this.meta={...this.meta, pseudo:v, phone:ph}; $("who").textContent=v;
+    try{ if(sb) await sb.auth.updateUser({ data:{ pseudo:v, phone:ph } }); await ensureProfile(this.userId, v, ph); alert("Profil mis a jour."); }
+    catch(e){ alert("Modifie ici ; la synchro se fera a la prochaine connexion."); }
+  },
+  renderPortfolio(){
+    const t=this.totals(), has=this.S.positions.length>0;
+    const alloc=ORDER.map(k=>({k,v:t.byCls[k]||0})).filter(x=>x.v>0);
+    let rows="";
+    for(const k of ORDER){
+      const list=this.S.positions.filter(p=>p.cls===k); if(!list.length) continue;
+      const sub=list.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.price||0),p.cur),0);
+      rows+=`<tr class="grouphead"><td colspan="8"><span class="sw" style="background:${CLS[k].c}"></span>${CLS[k].l}<span style="float:right;font-family:'JetBrains Mono',monospace">${eurF.format(sub)}</span></td></tr>`;
+      rows+=list.map(p=>{ const q=+p.qty||0, ve=this.toEur(q*(+p.price||0),p.cur), ce=this.toEur(q*(+p.pru||0),p.cur), pnl=ve-ce, pct=ce>0?pnl/ce*100:0, cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v);
+        return `<tr>
+          <td><b>${esc(p.name)}</b>${p.ticker?` <span class="mut">${esc(p.ticker)}</span>`:""}</td>
+          <td><span class="pill">${esc(p.env||"")}</span></td>
+          <td class="num">${q.toLocaleString("fr-FR",{maximumFractionDigits:8})}</td>
+          <td class="num">${cf(+p.pru||0)}</td>
+          <td class="num">${cf(+p.price||0)}</td>
+          <td class="num">${eurF.format(ve)}</td>
+          <td class="num ${pnl>=0?'up':'down'}">${(pnl>=0?'+':'')+eurF.format(pnl)}<br><span class="mut">${(pct>=0?'+':'')+pct.toLocaleString('fr-FR',{maximumFractionDigits:1})} %</span></td>
+          <td class="num"><button class="rowbtn" title="Modifier" onclick="App.openForm('${p.id}')">✎</button><button class="rowbtn" title="Supprimer" onclick="App.delPos('${p.id}')">✕</button></td>
+        </tr>`; }).join("");
+    }
+    $("view").innerHTML=`
+      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div><button class="btn small ghost" onclick="App.syncCrypto()">↻ Crypto</button><button class="btn small ghost" onclick="App.syncStocks()">↻ Actions/ETF</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
+      <div class="card hero">
+        <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
+          <div style="flex:1; min-width:190px">
+            <div class="lab">Valeur totale</div>
+            <div class="val">${eurF.format(t.val)}</div>
+            <div class="alt">≈ ${usdF.format(t.val*(this.S.rate||1.16))}</div>
+            <div class="pnl ${t.pnl>=0?'up':'down'}">${(t.pnl>=0?'+':'')+eurF.format(t.pnl)}${t.cost>0?` (${(t.pnl>=0?'+':'')+(t.pnl/t.cost*100).toLocaleString('fr-FR',{maximumFractionDigits:1})} %)`:''}</div>
+          </div>
+          ${has?`<div style="display:flex; align-items:center; gap:16px">${donut(alloc,t.val)}<div style="display:flex; flex-direction:column; gap:7px">${alloc.map(x=>`<span class="mut" style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CLS[x.k].c};margin-right:7px"></span>${CLS[x.k].l} ${t.val?Math.round(x.v/t.val*100):0} %</span>`).join("")}</div></div>`:""}
+        </div>
+        ${this.lastSync?`<div class="mut" style="font-size:11.5px;margin-top:12px">Cours crypto actualises a ${new Date(this.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}. Actions et ETF : prix saisis a la main.</div>`:""}
+      </div>
+      ${(this.S.snapshots&&this.S.snapshots.length>=2)?`<div class="card"><div class="viewhead" style="margin-bottom:10px"><div class="mlab">Evolution de la valeur</div><div class="grow"></div><span class="mono mut" style="font-size:12px">${this.S.snapshots.length} jours</span></div>${evoChart(this.S.snapshots)}<div class="mut" style="font-size:12px;margin-top:8px">${(()=>{ const s=this.S.snapshots, dd=s[s.length-1].v-s[0].v, pc=s[0].v?dd/s[0].v*100:0; return "Depuis le debut du suivi : "+(dd>=0?'+':'')+eurF.format(dd)+" ("+(pc>=0?'+':'')+pc.toFixed(1)+" %)"; })()}</div></div>`:""}
+      <div id="formzone"></div>
+      <div class="card" style="padding:${has?'6px 8px':'18px'}">
+        ${has?`<div class="tablewrap"><table class="list"><thead><tr><th>Position</th><th>Enveloppe</th><th class="num">Qté</th><th class="num">Prix d'achat</th><th class="num">Prix actuel</th><th class="num">Valeur (€)</th><th class="num">+/-</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
+          :`<div class="empty"><div class="big">🧭</div>Ton portefeuille est vide.<br><span class="mut">Ajoute ta premiere ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».</span></div>`}
+      </div>
+      ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${eurF.format(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
+      <div class="mut" style="text-align:center">Sauvegarde automatique sur ton compte a chaque changement. Les cours des actions se saisissent a la main ; le taux €/$ est en direct.</div>`;
+    this.renderForm();
+  },
+  renderForm(){
+    const z=$("formzone"); if(!z) return; if(!this.FORM){ z.innerHTML=""; return; }
+    const p=this.FORM==="new"?(this._new||{cls:"action",cur:"EUR",name:"",ticker:"",env:"CTO",qty:"",pru:"",price:""}):this.S.positions.find(x=>x.id===this.FORM);
+    if(!p){ this.FORM=null; z.innerHTML=""; return; }
+    z.innerHTML=`<div class="card">
+      <h3 style="margin-bottom:12px">${this.FORM==="new"?"Nouvelle position":"Modifier la position"}</h3>
+      ${this.FORM==="new"?`<div class="chips">${PRESETS.map((pr,i)=>`<button type="button" class="chip" onclick="App.preset(${i})">${pr.label}</button>`).join("")}</div>`:""}
+      <div class="frow c4">
+        <div class="field"><label>Classe</label><select id="f-cls">${ORDER.map(k=>`<option value="${k}" ${p.cls===k?"selected":""}>${CLS[k].l}</option>`).join("")}</select></div>
+        <div class="field"><label>Devise</label><select id="f-cur"><option value="EUR" ${p.cur!=="USD"?"selected":""}>€ Euro</option><option value="USD" ${p.cur==="USD"?"selected":""}>$ Dollar</option></select></div>
+        <div class="field"><label>Nom</label><input id="f-name" value="${esc(p.name)}" placeholder="Ex : LVMH, Bitcoin, Or…"></div>
+        <div class="field"><label>Ticker (option)</label><input id="f-ticker" value="${esc(p.ticker||"")}" placeholder="MC, BTC…"></div>
+      </div>
+      <div class="frow c4">
+        <div class="field"><label>Enveloppe</label><select id="f-env">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select></div>
+        <div class="field"><label>Quantité</label><input id="f-qty" inputmode="decimal" value="${esc(p.qty)}"></div>
+        <div class="field"><label>Prix d'achat (devise choisie)</label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}"></div>
+        <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
+      </div>
+      <div style="display:flex;gap:8px"><button class="btn small" onclick="App.savePos()">${this.FORM==="new"?"Ajouter":"Enregistrer"}</button><button class="btn small ghost" onclick="App.closeForm()">Annuler</button></div>
+    </div>`;
+  },
+  openForm(id){ if(id==="new") this._new=null; this.FORM=id==="new"?"new":id; this.renderForm(); const z=$("formzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
+  closeForm(){ this.FORM=null; this._new=null; this.renderForm(); },
+  savePos(){
+    const g=id=>$(id).value, num=v=>parseFloat(String(v).replace(",",".").replace(/\s/g,""))||0;
+    const name=g("f-name").trim(); if(!name){ alert("Donne un nom a la position."); return; }
+    const data={cls:g("f-cls"),cur:g("f-cur")==="USD"?"USD":"EUR",name,ticker:g("f-ticker").trim(),env:g("f-env"),qty:num(g("f-qty")),pru:num(g("f-pru")),price:num(g("f-price"))};
+    if(this.FORM==="new") this.S.positions.push({id:uid(),...data});
+    else { const p=this.S.positions.find(x=>x.id===this.FORM); if(p) Object.assign(p,data); }
+    this.FORM=null; this._new=null; this.save(); this.render();
+  },
+  delPos(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; if(!confirm(`Supprimer ${p.name} ?`)) return; this.S.positions=this.S.positions.filter(x=>x.id!==id); this.save(); this.render(); },
+  async syncCrypto(){
+    const cryptos=this.S.positions.filter(p=>p.cls==="crypto");
+    const map={}, ids=[];
+    for(const p of cryptos){ const id=coinId(p); if(id){ map[p.id]=id; if(!ids.includes(id)) ids.push(id); } }
+    if(!ids.length){ alert("Aucune crypto reconnue. Renseigne le ticker (BTC, ETH, SOL…) sur tes lignes crypto pour recuperer leur cours."); return; }
+    try{
+      const j=await Market.cfetch("https://api.coingecko.com/api/v3/simple/price?ids="+ids.join(",")+"&vs_currencies=usd,eur",30000);
+      for(const p of cryptos){ const id=map[p.id]; if(id&&j[id]){ p.price = p.cur==="USD" ? j[id].usd : j[id].eur; } }
+      this.lastSync=Date.now(); this.save(); this.render();
+    }catch(e){ alert("Cours crypto indisponibles (limite de l'API gratuite). Reessaie dans une minute."); }
+  },
+  preset(i){
+    const pr=PRESETS[i]; if(!pr) return;
+    this._new={cls:pr.cls,cur:pr.cur,name:pr.name,ticker:pr.ticker,env:pr.env,qty:"",pru:"",price:""};
+    this.renderForm();
+    if(pr.cls==="crypto" && pr.ticker){ const id=COINS[pr.ticker.toLowerCase()]; if(id) Market.cfetch("https://api.coingecko.com/api/v3/simple/price?ids="+id+"&vs_currencies=usd,eur",30000).then(j=>{ if(j&&j[id]&&this._new&&this.FORM==="new"){ this._new.price=String(pr.cur==="USD"?j[id].usd:j[id].eur); this.renderForm(); } }).catch(()=>{}); }
+  },
+  enableBio(){ Lock.setupBio().then(ok=>{ if(ok){ alert("Face ID active sur cet appareil."); this.render(); } else { alert("Activation annulee (ou refusee par l'appareil)."); } }); },
+  enableCode(){ const c=prompt("Choisis un code (4 a 8 chiffres) pour verrouiller l'appli sur cet appareil :"); if(c==null) return; Lock.setupCode(c.trim()).then(ok=>{ if(ok){ alert("Code active."); this.render(); } }); },
+  disableLock(){ if(confirm("Desactiver le verrouillage sur cet appareil ?")){ Lock.clear(); this.render(); } },
+  saveTdKey(){ this.S.tdKey=(($("pf-tdkey")||{}).value||"").trim(); this.save(); alert(this.S.tdKey?"Cle enregistree. Utilise le bouton « Actions/ETF » dans le portefeuille.":"Cle effacee."); },
+  async syncStocks(){
+    const key=(this.S.tdKey||"").trim();
+    if(!key){ alert("Ajoute d'abord ta cle Twelve Data (gratuite) dans l'onglet Profil."); this.go("profil"); return; }
+    const stocks=this.S.positions.filter(p=>p.cls==="etf"||p.cls==="action");
+    if(!stocks.length){ alert("Aucune action ou ETF a mettre a jour."); return; }
+    let n=0, fail=0;
+    for(const p of stocks){ const sym=(p.ticker||"").trim(); if(!sym){ fail++; continue; }
+      try{ const j=await Market.cfetch("https://api.twelvedata.com/price?symbol="+encodeURIComponent(sym)+"&apikey="+encodeURIComponent(key),60000); const px=parseFloat(j&&j.price); if(px>0){ p.price=px; n++; } else fail++; }
+      catch(e){ fail++; }
+    }
+    this.lastSync=Date.now(); this.save(); this.render();
+    alert(n+" ligne(s) actualisee(s)"+(fail?" ; "+fail+" non trouvee(s) : verifie le ticker (certaines valeurs europeennes demandent le suffixe d'echange, ex MC:Euronext)":"")+".");
+  },
+  exportData(){
+    const blob=new Blob([JSON.stringify({app:"boussole-cloud", exportedAt:new Date().toISOString(), pseudo:this.meta.pseudo||"", positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[]}, null, 2)], {type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="boussole-"+new Date().toISOString().slice(0,10)+".json"; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+  },
+  importData(e){
+    const f=e.target.files && e.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{ const j=JSON.parse(rd.result);
+        if(!j || !Array.isArray(j.positions)) throw 0;
+        if(!confirm("Remplacer tes positions actuelles par le fichier ("+j.positions.length+" ligne(s)) ?")){ return; }
+        this.S.positions=j.positions; if(j.rate) this.S.rate=j.rate; if(Array.isArray(j.snapshots)) this.S.snapshots=j.snapshots;
+        this.save(); this.go("portfolio"); alert("Donnees importees.");
+      }catch(err){ alert("Fichier invalide (ce n'est pas un export Boussole)."); } };
+    rd.readAsText(f); e.target.value="";
+  }
+};
+
+function donut(alloc,total){
+  if(!total) return "";
+  let acc=0; const segs=alloc.map(x=>{ const from=acc/total*360; acc+=x.v; const to=acc/total*360; return `${CLS[x.k].c} ${from}deg ${to}deg`; }).join(",");
+  return `<div class="donut" style="background:conic-gradient(${segs})"><div class="donuthole"></div></div>`;
+}
+
+function evoChart(snaps){
+  if(!snaps || snaps.length<2) return "";
+  const W=600, H=150, pad=8, n=snaps.length;
+  const vals=snaps.map(s=>s.v), min=Math.min.apply(null,vals), max=Math.max.apply(null,vals), span=(max-min)||1;
+  const x=i=> pad + i*(W-2*pad)/(n-1);
+  const y=v=> H-pad - (v-min)/span*(H-2*pad);
+  const pts=snaps.map((s,i)=> x(i).toFixed(1)+","+y(s.v).toFixed(1));
+  const up=snaps[n-1].v>=snaps[0].v, col=up?"#4CC38A":"#F2846B";
+  const area="M"+pad+","+(H-pad)+" L"+pts.join(" L")+" L"+x(n-1).toFixed(1)+","+(H-pad)+" Z";
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:150px;display:block">
+    <defs><linearGradient id="evofill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.28"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#evofill)"/>
+    <polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+  </svg>`;
+}
+
+const Market={
+  cache:{},
+  async cfetch(url,ttl){
+    const c=this.cache[url];
+    if(c && Date.now()-c.t < (ttl||60000)) return c.d;
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok) throw new Error("http "+r.status);
+    const d=await r.json(); this.cache[url]={t:Date.now(),d}; return d;
+  },
+  fngLabel(v){ return v<25?"Peur extreme":v<45?"Peur":v<=55?"Neutre":v<75?"Avidite":"Avidite extreme"; },
+  async load(force){
+    const box=$("marche"); if(!box) return;
+    if(force) this.cache={};
+    box.innerHTML=`<div class="mut">Chargement des indicateurs en direct…</div>`;
+    try{
+      const fng=await this.cfetch("https://api.alternative.me/fng/?limit=1",300000);
+      const fd=fng&&fng.data&&fng.data[0];
+      const px=await this.cfetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,eur&include_24hr_change=true",60000);
+      const gl=await this.cfetch("https://api.coingecko.com/api/v3/global",120000);
+      const tr=await this.cfetch("https://api.coingecko.com/api/v3/search/trending",300000);
+      let html="";
+      if(fd){ const v=+fd.value; html+=`<div class="mcard"><div class="mlab">Fear &amp; Greed (crypto)</div><div class="fngval">${v}<span class="fngmax">/100</span></div><div class="fngtrack"><div class="fngmark" style="left:${v}%"></div></div><div style="font-weight:700">${this.fngLabel(v)}</div><div class="mut" style="font-size:11px;margin-top:6px">Indice public (alternative.me), informatif.</div></div>`; }
+      const coin=(name,sym,o)=>{ if(!o) return ""; const ch=o.usd_24h_change||0, up=ch>=0; return `<div class="mcard"><div class="mlab">${name} <span class="pill">${sym}</span></div><div class="mprice">${usdF.format(o.usd)}</div><div class="mut" style="font-size:13px">≈ ${eurF.format(o.eur)}</div><div class="${up?'up':'down'}" style="font-weight:700;margin-top:4px">${up?'+':''}${ch.toFixed(2)} % (24h)</div></div>`; };
+      html+=coin("Bitcoin","BTC",px&&px.bitcoin)+coin("Ethereum","ETH",px&&px.ethereum);
+      if(gl&&gl.data){ const mc=gl.data.market_cap_change_percentage_24h_usd||0, dom=(gl.data.market_cap_percentage&&gl.data.market_cap_percentage.btc)||0, up=mc>=0; html+=`<div class="mcard"><div class="mlab">Marche crypto global</div><div class="${up?'up':'down'}" style="font-weight:700;font-size:18px">${up?'+':''}${mc.toFixed(2)} % <span class="mut" style="font-size:12px;font-weight:400">(24h, capitalisation)</span></div><div class="mut" style="margin-top:8px">Dominance Bitcoin : <b style="color:var(--ink)">${dom.toFixed(1)} %</b></div></div>`; }
+      if(tr&&tr.coins&&tr.coins.length){ const rows=tr.coins.slice(0,7).map((c,i)=>`<div class="trow"><span class="rank">${i+1}</span><span>${esc(c.item.name)}</span><span class="mut">${esc(c.item.symbol)}</span></div>`).join(""); html+=`<div class="mcard"><div class="mlab">Cryptos tendance (recherches)</div><div class="tlist">${rows}</div></div>`; }
+      box.innerHTML=`<div class="mgrid">${html}</div><div class="mut" style="text-align:center;margin-top:14px">Indicateurs publics a titre informatif. Aucun conseil d'achat ou de vente.</div>`;
+    }catch(e){ box.innerHTML=`<div class="mcard">Indicateurs momentanement indisponibles (limite de l'API gratuite). Reessaie dans une minute.</div>`; }
+  }
+};
+
+async function sha(s){ const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join(""); }
+
+const PRESETS=[
+  {label:"₿ Bitcoin",cls:"crypto",cur:"USD",name:"Bitcoin",ticker:"BTC",env:"Plateforme crypto"},
+  {label:"Ξ Ethereum",cls:"crypto",cur:"USD",name:"Ethereum",ticker:"ETH",env:"Plateforme crypto"},
+  {label:"ETF Monde",cls:"etf",cur:"EUR",name:"ETF Monde",ticker:"CW8",env:"PEA"},
+  {label:"S&P 500",cls:"etf",cur:"USD",name:"S&P 500",ticker:"CSPX",env:"CTO"},
+  {label:"Or",cls:"or",cur:"EUR",name:"Or",ticker:"",env:"Livret / cash"},
+  {label:"Action",cls:"action",cur:"EUR",name:"",ticker:"",env:"PEA"}
+];
+
+const Lock={
+  KEY:"boussole-lock",
+  get(){ try{ return JSON.parse(localStorage.getItem(this.KEY)||"null"); }catch(_){ return null; } },
+  set(v){ try{ localStorage.setItem(this.KEY, JSON.stringify(v)); }catch(_){ } },
+  clear(){ try{ localStorage.removeItem(this.KEY); }catch(_){ } },
+  exists(){ return !!this.get(); },
+  bioAvailable(){ return !!(window.PublicKeyCredential && window.isSecureContext); },
+  b64(buf){ return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); },
+  unb64(s){ return Uint8Array.from(atob(s), c=>c.charCodeAt(0)); },
+  _pending:null,
+  async setupBio(){
+    if(!this.bioAvailable()){ alert("Face ID / Touch ID indisponible ici (il faut HTTPS et un appareil compatible)."); return false; }
+    try{
+      const cred=await navigator.credentials.create({ publicKey:{
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp:{ name:"Boussole" },
+        user:{ id:new TextEncoder().encode(App.userId), name:App.email||"boussole", displayName:App.meta.pseudo||"Boussole" },
+        pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+        authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required" },
+        timeout:60000
+      }});
+      this.set({ userId:App.userId, type:"faceid", credId:this.b64(cred.rawId) });
+      return true;
+    }catch(e){ return false; }
+  },
+  async setupCode(code){
+    if(!/^\d{4,8}$/.test(code)){ alert("Choisis un code de 4 a 8 chiffres."); return false; }
+    const salt=this.b64(crypto.getRandomValues(new Uint8Array(8)));
+    const h=await sha(code+salt);
+    this.set({ userId:App.userId, type:"code", codeHash:h, salt });
+    return true;
+  },
+  show(session){
+    this._pending=session;
+    const meta=(session.user&&session.user.user_metadata)||{};
+    const l=this.get();
+    $("lock-who").textContent=(meta.pseudo||meta.first_name) ? ("Bon retour, "+(meta.pseudo||meta.first_name)) : "Application verrouillee";
+    $("auth").style.display="none"; $("app").style.display="none"; $("lock").style.display="flex";
+    const lm=$("lock-msg"); lm.className="msg"; lm.textContent="";
+    if(l&&l.type==="faceid"){ $("lock-bio").style.display="flex"; $("lock-code").style.display="none"; this.unlockBio(); }
+    else { $("lock-code").style.display="block"; $("lock-bio").style.display="none"; setTimeout(()=>{ const i=$("lock-code-input"); if(i) i.focus(); },120); }
+  },
+  async unlockBio(){
+    const l=this.get(); if(!l||l.type!=="faceid") return;
+    try{
+      await navigator.credentials.get({ publicKey:{
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{ type:"public-key", id:this.unb64(l.credId) }],
+        userVerification:"required", timeout:60000
+      }});
+      this.done();
+    }catch(e){ const lm=$("lock-msg"); lm.className="msg err"; lm.textContent="Echec Face ID. Reessaie ou utilise le mot de passe."; }
+  },
+  async unlockCode(){
+    const l=this.get(); if(!l||l.type!=="code") return;
+    const v=$("lock-code-input").value; const h=await sha(v+l.salt);
+    if(h===l.codeHash){ this.done(); } else { const lm=$("lock-msg"); lm.className="msg err"; lm.textContent="Code incorrect."; }
+  },
+  done(){ $("lock").style.display="none"; const s=this._pending; this._pending=null; onLogin(s); },
+  async usePassword(){ if(sb){ try{ await sb.auth.signOut(); }catch(_){ } } location.reload(); }
+};
+
+async function onLogin(session){
+  if(!session) return;
+  App.start(session);
+}
+
+/* Au chargement : si une session existe déjà (se souvenir de moi), Face ID/code puis ouverture. */
+(async function init(){
+  if(sb){
+    try{
+      const { data } = await sb.auth.getSession();
+      if(data.session){
+        const l=Lock.get();
+        if(l && l.userId===data.session.user.id) Lock.show(data.session);
+        else onLogin(data.session);
+      }
+    }catch(_){}
+  } else {
+    showMsg("Ecrans prets. La base (comptes + sauvegarde) se branche des que ton Supabase gratuit est cree.","info");
+  }
+})();
+</script>
+</body>
+</html>
