@@ -109,6 +109,8 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 /* allocation donut */
 .donut{width:104px; height:104px; border-radius:50%; position:relative; flex:none}
 .donut .donuthole{position:absolute; inset:15px; border-radius:50%; background:var(--surface)}
+.pie{width:132px; height:132px; border-radius:50%; flex:none; box-shadow:0 3px 12px rgba(0,0,0,.35); position:relative}
+.pie::after{content:""; position:absolute; inset:0; border-radius:50%; box-shadow:inset 0 0 0 1px var(--line)}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -516,7 +518,7 @@ const App = {
             <div class="alt">≈ ${usdF.format(t.val*(this.S.rate||1.16))}</div>
             <div class="pnl ${t.pnl>=0?'up':'down'}">${(t.pnl>=0?'+':'')+eurF.format(t.pnl)}${t.cost>0?` (${(t.pnl>=0?'+':'')+(t.pnl/t.cost*100).toLocaleString('fr-FR',{maximumFractionDigits:1})} %)`:''}</div>
           </div>
-          ${has?`<div style="display:flex; align-items:center; gap:16px">${donut(alloc,t.val)}<div style="display:flex; flex-direction:column; gap:7px">${alloc.map(x=>`<span class="mut" style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CLS[x.k].c};margin-right:7px"></span>${CLS[x.k].l} ${t.val?Math.round(x.v/t.val*100):0} %</span>`).join("")}</div></div>`:""}
+          ${has?`<div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap">${pie(alloc,t.val)}<div style="display:flex; flex-direction:column; gap:8px">${alloc.map(x=>`<span class="mut" style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CLS[x.k].c};margin-right:7px"></span>${CLS[x.k].l} <b style="color:var(--ink)">${t.val?Math.round(x.v/t.val*100):0} %</b> <span style="opacity:.65">${eurF.format(x.v)}</span></span>`).join("")}</div></div>`:""}
         </div>
         ${this.lastSync?`<div class="mut" style="font-size:11.5px;margin-top:12px">Cours actualisés a ${new Date(this.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}.</div>`:""}
       </div>
@@ -652,6 +654,18 @@ function donut(alloc,total){
   if(!total) return "";
   let acc=0; const segs=alloc.map(x=>{ const from=acc/total*360; acc+=x.v; const to=acc/total*360; return `${CLS[x.k].c} ${from}deg ${to}deg`; }).join(",");
   return `<div class="donut" style="background:conic-gradient(${segs})"><div class="donuthole"></div></div>`;
+}
+function pie(alloc,total){
+  if(!total) return "";
+  const gap = alloc.length>1 ? 1.6 : 0;
+  let acc=0; const segs=[];
+  for(const x of alloc){
+    const from=acc/total*360; acc+=x.v; const to=acc/total*360;
+    const end=Math.max(from, to-gap);
+    segs.push(`${CLS[x.k].c} ${from}deg ${end}deg`);
+    if(gap) segs.push(`var(--surface) ${end}deg ${to}deg`);
+  }
+  return `<div class="pie" style="background:conic-gradient(from -90deg, ${segs.join(",")})" title="Répartition par classe d'actif"></div>`;
 }
 
 function evoChart(snaps){
