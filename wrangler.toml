@@ -1,0 +1,9 @@
+name = "boussole"
+compatibility_date = "2024-11-01"
+main = "worker.js"
+
+# Sert les fichiers statiques (index.html = l'appli) ; le Worker ci-dessus
+# n'intervient que pour /api/cours (les cours en direct).
+[assets]
+directory = "."
+binding = "ASSETS"
