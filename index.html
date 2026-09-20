@@ -145,6 +145,7 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
   <div class="authcard">
     <div class="brand"><svg class="logo" viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"><rect width="180" height="180" rx="40" fill="#1B2540"/><circle cx="90" cy="90" r="58" fill="none" stroke="#57491F" stroke-width="4"/><circle cx="90" cy="90" r="7" fill="#E0B54F"/><polygon points="90,32 106,90 90,82 74,90" fill="#E0B54F"/><polygon points="90,148 74,90 90,98 106,90" fill="#8FA0BF"/></svg><span class="name">Boussole<span class="dot">.</span></span></div>
     <div class="tagline">Tous tes investissements au meme endroit : PEA, actions, ETF, Bitcoin, or.</div>
+    <div style="text-align:center;margin-bottom:14px"><button class="langbtn" onclick="toggleLang()" style="background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700">EN</button></div>
 
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-login" aria-selected="true" onclick="UI.tab('login')">Connexion</button>
@@ -219,7 +220,7 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
     <div class="grow"></div>
     <span class="who" id="who"></span>
     <button class="btn ghost" style="width:auto; padding:7px 12px" onclick="App.refreshRate(true)">↻ cours €/$</button>
-    <button class="btn ghost" style="width:auto; padding:7px 12px" onclick="Auth.logout()">Deconnexion</button>
+    <button class="btn ghost langbtn" style="width:auto; padding:7px 10px" onclick="toggleLang()">EN</button><button class="btn ghost" style="width:auto; padding:7px 12px" onclick="Auth.logout()">Deconnexion</button>
   </div>
   <nav class="apptabs" id="apptabs">
     <button data-tab="portfolio" aria-selected="true" onclick="App.go('portfolio')">Portefeuille</button>
@@ -249,6 +250,33 @@ if(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON && window.supabase){
   });
 }
 const $ = id => document.getElementById(id);
+
+/* ================= BILINGUE FR/EN ================= */
+const I18N = {"Connexion": "Login", "Creer un compte": "Sign up", "Tous tes investissements au meme endroit : PEA, actions, ETF, Bitcoin, or.": "All your investments in one place: PEA, stocks, ETFs, Bitcoin, gold.", "Email, pseudo ou telephone": "Email, username or phone", "Mot de passe": "Password", "voir": "show", "cacher": "hide", "Se souvenir de moi sur cet appareil": "Remember me on this device", "Se connecter": "Log in", "🙂 Se connecter avec Face ID": "🙂 Log in with Face ID", "Prenom": "First name", "Nom": "Last name", "Pseudo": "Username", "modifiable plus tard": "editable later", "Date de naissance": "Date of birth", "Email": "Email", "Telephone": "Phone", "(facultatif, pour se connecter avec)": "(optional, to log in with)", "Confirmer le mot de passe": "Confirm password", "au moins 8 caracteres": "at least 8 characters", "Activer Face ID": "Enable Face ID", "(proposé après ta premiere connexion)": "(offered after your first login)", "Creer mon compte": "Create my account", "Ton mot de passe est stocke": "Your password is stored", "hache": "hashed", "(bcrypt) : personne, meme pas nous, ne peut le lire. Tes donnees ne servent qu'a ton suivi perso.": "(bcrypt): nobody, not even us, can read it. Your data is only for your own tracking.", "Application verrouillee": "App locked", "🙂 Deverrouiller avec Face ID": "🙂 Unlock with Face ID", "Code": "Code", "Deverrouiller": "Unlock", "Utiliser le mot de passe": "Use password", "Deconnexion": "Log out", "↻ cours €/$": "↻ EUR/USD rate", "Portefeuille": "Portfolio", "Marche": "Market", "Profil": "Profile", "Sauvegarde…": "Saving…", "✓ Sauvegardé": "✓ Saved", "⚠ non sauvegardé": "⚠ not saved", "Mon portefeuille": "My portfolio", "↻ Cours": "↻ Prices", "+ Ajouter": "+ Add", "Valeur totale": "Total value", "Actions": "Stocks", "Or": "Gold", "Autre / cash": "Other / cash", "Position": "Position", "Enveloppe": "Envelope", "Qté": "Qty", "Prix d'achat": "Buy price", "Prix actuel": "Current price", "Valeur (€)": "Value (€)", "Par enveloppe (PEA, CTO, crypto…)": "By envelope (PEA, CTO, crypto…)", "Ton portefeuille est vide.": "Your portfolio is empty.", "Ajoute ta premiere ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».": "Add your first line (PEA, stock, ETF, Bitcoin, gold…) with « + Add ».", "Sauvegarde automatique sur ton compte. Bouton": "Automatic save to your account. Button", "pour rafraichir les prix ; clique le nom d'une ligne pour son graphique.": "to refresh prices; click a line's name for its chart.", "Nouvelle position": "New position", "Modifier la position": "Edit position", "Classe": "Class", "Devise": "Currency", "€ Euro": "€ Euro", "$ Dollar": "$ Dollar", "Ticker (option)": "Ticker (optional)", "Quantité": "Quantity", "Prix d'achat (devise choisie)": "Buy price (chosen currency)", "Symbole de cotation": "Quote symbol", "(pour les cours et le graphique en direct)": "(for live prices and chart)", "Ajouter": "Add", "Enregistrer": "Save", "Annuler": "Cancel", "Assurance-vie": "Life insurance", "Plateforme crypto": "Crypto platform", "Cold wallet": "Cold wallet", "Livret / cash": "Savings / cash", "Autre": "Other", "↻ Actualiser": "↻ Refresh", "Chargement des indicateurs en direct…": "Loading live indicators…", "Fear & Greed (crypto)": "Fear & Greed (crypto)", "Indice public (alternative.me), informatif.": "Public index (alternative.me), for information.", "Peur extreme": "Extreme fear", "Peur": "Fear", "Neutre": "Neutral", "Avidite": "Greed", "Avidite extreme": "Extreme greed", "Marche crypto global": "Global crypto market", "Cryptos tendance (recherches)": "Trending cryptos (searches)", "Indicateurs publics a titre informatif. Aucun conseil d'achat ou de vente.": "Public indicators, for information only. No buy or sell advice.", "Pseudo (modifiable)": "Username (editable)", "Telephone (modifiable, sert a se connecter)": "Phone (editable, used to log in)", "Tes donnees sont sauvegardees sur ton compte. Deconnexion en haut a droite.": "Your data is saved to your account. Log out at the top right.", "Verrouillage sur cet appareil": "Lock on this device", "Protege l'ouverture de l'appli sur ce telephone avec Face ID (ou un code). Ton mot de passe reste le moyen de secours.": "Protect opening the app on this phone with Face ID (or a code). Your password stays the fallback.", "Activer Face ID / Touch ID": "Enable Face ID / Touch ID", "Definir un code": "Set a code", "Desactiver": "Disable", "Mes donnees": "My data", "Exporter mes donnees": "Export my data", "Importer un fichier": "Import a file", "Chargement…": "Loading…", "Fermer": "Close"};
+let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
+let _trBusy=false;
+function _trText(s){ const k=s.trim(); if(!k) return null; const e=I18N[k]; return e===undefined?null:s.replace(k,e); }
+function applyLang(){
+  _trBusy=true;
+  try{
+    const en=LANG==="en";
+    const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+    const nodes=[]; let nd; while(nd=w.nextNode()) nodes.push(nd);
+    for(const t of nodes){
+      if(en){ if(t.__fr===undefined){ const r=_trText(t.nodeValue); if(r!==null){ t.__fr=t.nodeValue; t.nodeValue=r; } } }
+      else if(t.__fr!==undefined){ t.nodeValue=t.__fr; t.__fr=undefined; }
+    }
+    document.querySelectorAll("[placeholder]").forEach(el=>{ const cur=el.getAttribute("placeholder")||"";
+      if(en){ if(el.__ph===undefined){ const e=I18N[cur.trim()]; if(e!==undefined){ el.__ph=cur; el.setAttribute("placeholder",e); } } }
+      else if(el.__ph!==undefined){ el.setAttribute("placeholder",el.__ph); el.__ph=undefined; } });
+  }catch(_){}
+  _trBusy=false;
+}
+function setLang(l){ LANG=l; try{ localStorage.setItem("boussole-lang",l); }catch(_){} document.documentElement.lang=l; document.querySelectorAll(".langbtn").forEach(b=>b.textContent=(l==="fr"?"EN":"FR")); applyLang(); }
+function toggleLang(){ setLang(LANG==="fr"?"en":"fr"); }
+const _langMO=new MutationObserver(()=>{ if(LANG==="en"&&!_trBusy) applyLang(); });
+window.addEventListener("load",()=>{ try{ _langMO.observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(_){} document.querySelectorAll(".langbtn").forEach(b=>b.textContent=(LANG==="fr"?"EN":"FR")); if(LANG==="en") applyLang(); });
+
 function showMsg(text, kind){ const m=$("msg"); m.textContent=text; m.className="msg "+(kind||"info"); }
 function clearMsg(){ const m=$("msg"); m.className="msg"; m.textContent=""; }
 
