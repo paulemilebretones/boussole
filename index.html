@@ -382,7 +382,7 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 function setBadge(state){ const el=$("savebadge"); if(!el) return; const m=({pending:["Sauvegarde…","var(--muted)"],ok:["✓ Sauvegardé","var(--gain)"],err:["⚠ non sauvegardé","var(--loss)"]})[state]||["",""]; el.textContent=m[0]; el.style.color=m[1]; }
 function applyRate(r){ const el=$("ratechip"); if(el) el.textContent="1 € = "+(r||1.16).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:3})+" $"; }
 
-const RELAIS="/.netlify/functions/cours";
+const RELAIS="/api/cours";
 const RANGELABEL={ "1d":"1 jour","5d":"1 semaine","1mo":"1 mois","6mo":"6 mois","ytd":"depuis janvier","1y":"1 an","5y":"5 ans","max":"max" };
 function lineChart(points, up){
   const vals=points.map(p=>p.c), n=points.length, W=680, H=180, pad=8;

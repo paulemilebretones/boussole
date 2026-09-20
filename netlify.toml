@@ -1,6 +1,13 @@
 [functions]
   directory = "netlify/functions"
 
+# Chemin neutre du relais : marche sur Netlify (via cette redirection) ET sur Cloudflare Pages
+# (ou une fonction repond directement sur /api/cours). Le code de l'appli appelle /api/cours partout.
+[[redirects]]
+  from = "/api/cours"
+  to = "/.netlify/functions/cours"
+  status = 200
+
 # La page se revalide a chaque ouverture : l'appli se met a jour toute seule,
 # plus jamais de version en cache qui traine.
 [[headers]]
