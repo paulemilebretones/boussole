@@ -77,7 +77,8 @@ input,select{font:inherit; color:var(--ink)}
 .savebadge{color:var(--muted); background:var(--surface2)}
 .ratechip{color:var(--accent); background:var(--accent-weak); border-color:var(--accent-line)}
 /* suivi */
-#view{display:grid; gap:14px}
+#view{display:grid; grid-template-columns:minmax(0,1fr); gap:14px}
+#view>*{min-width:0}
 .viewhead{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
 .viewhead h2{font-size:20px}
 .viewhead .grow{flex:1}
