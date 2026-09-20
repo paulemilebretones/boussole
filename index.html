@@ -485,6 +485,7 @@ const App = {
   renderMarche(){
     const mt=[["crypto","Crypto"],["bourse","Bourse"],["matieres","Matières"]];
     $("view").innerHTML=`<div class="viewhead"><h2>Marché</h2><div class="grow"></div><button class="btn small ghost" onclick="Market.load(true)">↻ Actualiser</button></div>
+      <div class="field searchbox" style="margin-bottom:12px"><label>Rechercher un marché <span class="mut" style="font-weight:400">(action, ETF ou crypto - ex : Tesla, Nvidia, Amundi, Bitcoin)</span></label><input id="m-search" autocomplete="off" placeholder="Tape un nom et choisis pour voir le cours et le graphique" oninput="Market.searchSym(this.value)"><div id="m-search-res" class="searchres"></div></div>
       <div class="apptabs" style="max-width:none">${mt.map(t=>`<button aria-selected="${Market.view===t[0]}" onclick="Market.setView('${t[0]}')">${t[1]}</button>`).join("")}</div>
       <div id="marche"><div class="mut">Chargement…</div></div>`;
   },
@@ -638,11 +639,16 @@ const App = {
     if($("f-ysym")) $("f-ysym").value=sym;
     const sb2=$("f-search"); if(sb2) sb2.value=name;
     const rc=$("f-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; }
-    // On va chercher le prix + la devise en direct pour remplir tout seul.
+    // On recupere le prix en direct. IMPORTANT: on ne remplit le prix que s'il est ENCORE VIDE
+    // (jamais par-dessus une valeur que tu tapes) et si la valeur choisie est toujours la meme.
+    const pr=$("f-price"); const priceEmptyAtPick = pr ? (pr.value.trim()==="") : false;
+    if(pr && priceEmptyAtPick) pr.placeholder="Prix récupéré automatiquement…";
     fetch(RELAIS+"?symbols="+encodeURIComponent(sym),{cache:"no-store"}).then(r=>r.json()).then(j=>{
       const d=j&&j.quotes&&j.quotes[sym];
-      if(d&&d.price>0){ const pr=$("f-price"); if(pr) pr.value=String(Math.round(d.price*100)/100); if((d.currency==="USD"||d.currency==="EUR")&&$("f-cur")) $("f-cur").value=d.currency; }
-    }).catch(()=>{});
+      const pr2=$("f-price"); const ys=$("f-ysym");
+      const stillSame = ys && ys.value===sym;
+      if(pr2){ pr2.placeholder=""; if(d&&d.price>0 && stillSame && pr2.value.trim()===""){ pr2.value=String(Math.round(d.price*100)/100); if((d.currency==="USD"||d.currency==="EUR")&&$("f-cur")) $("f-cur").value=d.currency; } }
+    }).catch(()=>{ const pr3=$("f-price"); if(pr3) pr3.placeholder=""; });
   },
   openForm(id){ if(id==="new") this._new=null; this.FORM=id==="new"?"new":id; this.renderForm(); const z=$("formzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
   closeForm(){ this.FORM=null; this._new=null; this.renderForm(); },
@@ -782,10 +788,27 @@ const Market={
     const box=$("marche"); if(!box) return;
     if(force) this.cache={};
     box.innerHTML=`<div class="mut">Chargement…</div>`;
-    if(this.view==="crypto") return this.loadCrypto(box);
     if(this.chartSym) return this.loadChart(box);
+    if(this.view==="crypto") return this.loadCrypto(box);
     return this.loadList(box);
   },
+  searchSym(q){
+    q=(q||"").trim(); const rc=$("m-search-res");
+    clearTimeout(this._srT);
+    if(q.length<2){ if(rc){ rc.className="searchres"; rc.innerHTML=""; } return; }
+    this._srT=setTimeout(async()=>{
+      try{
+        const r=await fetch(RELAIS+"?search="+encodeURIComponent(q),{cache:"no-store"});
+        const j=await r.json(); const res=(j&&j.results)||[]; this._searchRes=res;
+        const rc2=$("m-search-res"); if(!rc2) return;
+        if(!res.length){ rc2.className="searchres on"; rc2.innerHTML='<div class="srhint">Aucun résultat.</div>'; return; }
+        const tlab={EQUITY:"Action",ETF:"ETF",CRYPTOCURRENCY:"Crypto",MUTUALFUND:"Fonds",INDEX:"Indice",CURRENCY:"Devise"};
+        rc2.className="searchres on";
+        rc2.innerHTML=res.map((x,i)=>`<div class="sr" onclick="Market.pickSymIdx(${i})"><div><div class="srname">${esc(x.name)}</div><div class="srsym">${esc(x.symbol)}</div></div><span class="srx">${tlab[x.type]||esc(x.type)}<br>${esc(x.exch||"")}</span></div>`).join("");
+      }catch(e){ const rc3=$("m-search-res"); if(rc3){ rc3.className="searchres on"; rc3.innerHTML='<div class="srhint">Recherche indisponible un instant. Réessaie.</div>'; } }
+    },300);
+  },
+  pickSymIdx(i){ const x=this._searchRes&&this._searchRes[i]; if(!x) return; const rc=$("m-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; } const si=$("m-search"); if(si) si.value=x.name; this.openChart(x.symbol, x.name); },
   async loadCrypto(box){
     try{
       const m=await this.cfetch(RELAIS+"?market=1",45000);
