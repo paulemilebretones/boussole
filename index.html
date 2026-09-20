@@ -412,8 +412,9 @@ const App = {
     await this.load(); applyRate(this.S.rate); this.go("portfolio"); this.refreshRate(); this.save();
   },
   async load(){
-    try{ const { data, error } = await sb.from("portfolios").select("data").eq("user_id",this.userId).maybeSingle();
-      if(!error && data && data.data){ const d=data.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; } }catch(e){}
+    try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
+      const row = data && data[0];
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -426,8 +427,19 @@ const App = {
     this.recordSnapshot();
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
-      try{ const { error } = await sb.from("portfolios").upsert({ user_id:this.userId, data:{positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", savedAt:Date.now()}, updated_at:new Date().toISOString() });
-        setBadge(error?"err":"ok"); }catch(e){ setBadge("err"); }
+      if(!this.userId){ setBadge("err"); return; }
+      const payload={positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", savedAt:Date.now()};
+      const now=new Date().toISOString();
+      try{
+        // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
+        const { data:upd, error:e1 } = await sb.from("portfolios").update({ data:payload, updated_at:now }).eq("user_id",this.userId).select("user_id");
+        if(e1) throw e1;
+        if(!upd || upd.length===0){
+          const { error:e2 } = await sb.from("portfolios").insert({ user_id:this.userId, data:payload, updated_at:now });
+          if(e2) throw e2;
+        }
+        setBadge("ok");
+      }catch(e){ setBadge("err"); }
     },600);
   },
   async refreshRate(force){
