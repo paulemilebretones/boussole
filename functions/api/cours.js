@@ -40,6 +40,18 @@ export async function onRequestGet(context){
       MKT={t:Date.now(),d:data};
       return done(data);
     }
+    if(qp.search){
+      const q=String(qp.search).trim(); if(!q) return done({results:[]});
+      const su=`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&listsCount=0&enableFuzzyQuery=false`;
+      const rs=await fetch(su,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json"}});
+      if(!rs.ok) throw new Error("yahoo "+rs.status);
+      const ds=await rs.json();
+      const ok={EQUITY:1,ETF:1,CRYPTOCURRENCY:1,INDEX:1,MUTUALFUND:1,CURRENCY:1};
+      const results=((ds&&ds.quotes)||[]).filter(x=>x&&x.symbol&&ok[x.quoteType]).slice(0,8).map(x=>({
+        symbol:x.symbol, name:x.shortname||x.longname||x.symbol,
+        exch:x.exchDisp||x.exchange||"", type:x.quoteType }));
+      return done({results});
+    }
     if(qp.symbols){
       const list=qp.symbols.split(",").map(s=>s.trim()).filter(Boolean).slice(0,30);
       const out={};

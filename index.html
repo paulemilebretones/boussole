@@ -112,6 +112,28 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .donut .donuthole{position:absolute; inset:15px; border-radius:50%; background:var(--surface)}
 .pie{width:132px; height:132px; border-radius:50%; flex:none; box-shadow:0 3px 12px rgba(0,0,0,.35); position:relative}
 .pie::after{content:""; position:absolute; inset:0; border-radius:50%; box-shadow:inset 0 0 0 1px var(--line)}
+.langtog{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:var(--surface2); vertical-align:middle}
+.langtog .lt{background:none; border:none; color:var(--muted); font-weight:800; font-size:12px; letter-spacing:.02em; padding:5px 13px; cursor:pointer; font-family:inherit; line-height:1.4}
+.langtog .lt.on{background:var(--accent); color:#0C1120}
+.langtog .lt:not(.on):hover{color:var(--ink)}
+.searchbox{position:relative}
+.searchres{position:absolute; left:0; right:0; top:100%; z-index:30; background:var(--surface2); border:1px solid var(--line); border-radius:12px; margin-top:6px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,.45); display:none; max-height:320px; overflow-y:auto}
+.searchres.on{display:block}
+.searchres .sr{display:flex; align-items:center; gap:10px; padding:11px 13px; cursor:pointer; border-bottom:1px solid var(--line)}
+.searchres .sr:last-child{border-bottom:none}
+.searchres .sr:hover{background:var(--accent-weak)}
+.searchres .srname{font-weight:600}
+.searchres .srsym{font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--accent); margin-top:1px}
+.searchres .srx{margin-left:auto; font-size:11px; color:var(--muted); text-align:right; white-space:nowrap}
+.searchres .srhint{padding:11px 13px; color:var(--muted); font-size:12.5px}
+.lexique{margin:8px 0 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface2)}
+.lexique summary{cursor:pointer; padding:11px 14px; font-weight:700; font-size:13.5px; color:var(--ink); list-style:none}
+.lexique summary::-webkit-details-marker{display:none}
+.lexique summary::before{content:"ⓘ "; color:var(--accent)}
+.lexique[open] summary{border-bottom:1px solid var(--line)}
+.lexique .lx{padding:12px 14px; display:grid; gap:10px}
+.lexique .lx div{font-size:13px; color:var(--muted); line-height:1.5}
+.lexique .lx b{color:var(--ink)}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -149,7 +171,7 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
   <div class="authcard">
     <div class="brand"><svg class="logo" viewBox="0 0 180 180" width="44" height="44" aria-hidden="true"><rect width="180" height="180" rx="40" fill="#1B2540"/><circle cx="90" cy="90" r="63" fill="none" stroke="#E0B54F" stroke-width="2" opacity="0.9"/><circle cx="90" cy="90" r="50" fill="none" stroke="#57491F" stroke-width="2"/><g stroke="#8FA0BF" stroke-width="2.5" stroke-linecap="round" opacity="0.6"><line x1="90" y1="30" x2="90" y2="38"/><line x1="90" y1="142" x2="90" y2="150"/><line x1="30" y1="90" x2="38" y2="90"/><line x1="142" y1="90" x2="150" y2="90"/></g><polygon points="90,42 106,90 90,84 74,90" fill="#E0B54F"/><polygon points="90,138 74,90 90,96 106,90" fill="#7C8BA6"/><circle cx="90" cy="90" r="7" fill="#1B2540" stroke="#E0B54F" stroke-width="3.5"/></svg><span class="name">Boussole<span class="dot">.</span></span></div>
     <div class="tagline">Tous tes investissements au même endroit : PEA, actions, ETF, Bitcoin, or.</div>
-    <div style="text-align:center;margin-bottom:14px"><button class="langbtn" onclick="toggleLang()" style="background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700">EN</button></div>
+    <div style="text-align:center;margin-bottom:14px"><span class="langtog" role="group" aria-label="Langue / Language"><button type="button" class="lt" data-l="fr" onclick="setLang('fr')">FR</button><button type="button" class="lt" data-l="en" onclick="setLang('en')">EN</button></span></div>
 
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-login" aria-selected="true" onclick="UI.tab('login')">Connexion</button>
@@ -224,7 +246,7 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
     <div class="grow"></div>
     <span class="who" id="who"></span>
     <button class="btn ghost" style="width:auto; padding:7px 12px" onclick="App.refreshRate(true)">↻ cours €/$</button>
-    <button class="btn ghost langbtn" style="width:auto; padding:7px 10px" onclick="toggleLang()">EN</button><button class="btn ghost" style="width:auto; padding:7px 12px" onclick="Auth.logout()">Déconnexion</button>
+    <span class="langtog" role="group" aria-label="Langue / Language"><button type="button" class="lt" data-l="fr" onclick="setLang('fr')">FR</button><button type="button" class="lt" data-l="en" onclick="setLang('en')">EN</button></span><button class="btn ghost" style="width:auto; padding:7px 12px" onclick="Auth.logout()">Déconnexion</button>
   </div>
   <nav class="apptabs" id="apptabs">
     <button data-tab="portfolio" aria-selected="true" onclick="App.go('portfolio')">Portefeuille</button>
@@ -276,10 +298,11 @@ function applyLang(){
   }catch(_){}
   _trBusy=false;
 }
-function setLang(l){ LANG=l; try{ localStorage.setItem("boussole-lang",l); }catch(_){} document.documentElement.lang=l; document.querySelectorAll(".langbtn").forEach(b=>b.textContent=(l==="fr"?"EN":"FR")); if(typeof App!=="undefined"&&App.userId){ try{ App.render(); if(App.tab==="marche"&&typeof Market!=="undefined") Market.load(); }catch(_){} } applyLang(); }
+function syncLangTog(){ try{ document.querySelectorAll(".langtog .lt").forEach(b=>b.classList.toggle("on", b.dataset.l===LANG)); }catch(_){} }
+function setLang(l){ LANG=l; try{ localStorage.setItem("boussole-lang",l); }catch(_){} document.documentElement.lang=l; syncLangTog(); if(typeof App!=="undefined"&&App.userId){ try{ App.render(); if(App.tab==="marche"&&typeof Market!=="undefined") Market.load(); }catch(_){} } applyLang(); }
 function toggleLang(){ setLang(LANG==="fr"?"en":"fr"); }
 const _langMO=new MutationObserver(()=>{ if(LANG==="en"&&!_trBusy) applyLang(); });
-window.addEventListener("load",()=>{ try{ _langMO.observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(_){} document.querySelectorAll(".langbtn").forEach(b=>b.textContent=(LANG==="fr"?"EN":"FR")); if(LANG==="en") applyLang(); });
+window.addEventListener("load",()=>{ try{ _langMO.observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(_){} syncLangTog(); if(LANG==="en") applyLang(); });
 
 function showMsg(text, kind){ const m=$("msg"); m.textContent=text; m.className="msg "+(kind||"info"); }
 function clearMsg(){ const m=$("msg"); m.className="msg"; m.textContent=""; }
@@ -553,20 +576,32 @@ const App = {
     z.innerHTML=`<div class="card">
       <h3 style="margin-bottom:12px">${this.FORM==="new"?"Nouvelle position":"Modifier la position"}</h3>
       ${this.FORM==="new"?`<div class="chips">${PRESETS.map((pr,i)=>`<button type="button" class="chip" onclick="App.preset(${i})">${pr.label}</button>`).join("")}</div>`:""}
+      <div class="field searchbox" id="search-field"><label>Rechercher la valeur <span class="mut" style="font-weight:400">(tape un nom, ex : LVMH, Apple, Bitcoin, S&amp;P 500)</span></label><input id="f-search" autocomplete="off" placeholder="Tape un nom, puis choisis dans la liste" oninput="App.searchSym(this.value)" onfocus="App.searchSym(this.value)"><div id="f-search-res" class="searchres"></div></div>
       <div class="frow c4">
         <div class="field"><label>Classe</label><select id="f-cls" onchange="App.onClassChange()">${ORDER.map(k=>`<option value="${k}" ${p.cls===k?"selected":""}>${CLS[k].l}</option>`).join("")}</select></div>
         <div class="field"><label>Devise</label><select id="f-cur"><option value="EUR" ${p.cur!=="USD"?"selected":""}>€ Euro</option><option value="USD" ${p.cur==="USD"?"selected":""}>$ Dollar</option></select></div>
         <div class="field"><label>Nom</label><input id="f-name" value="${esc(p.name)}" placeholder="Ex : LVMH, Bitcoin, Or…"></div>
-        <div class="field"><label>Ticker (option)</label><input id="f-ticker" value="${esc(p.ticker||"")}" placeholder="MC, BTC…"></div>
+        <div class="field"><label>Ticker <span class="mut" style="font-weight:400">(code court de la valeur, ex : MC, BTC - facultatif)</span></label><input id="f-ticker" value="${esc(p.ticker||"")}" placeholder="MC, BTC…"></div>
       </div>
       <div class="frow c4">
-        <div class="field"><label>Enveloppe</label><select id="f-env">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select></div>
+        <div class="field"><label>Enveloppe <span class="mut" style="font-weight:400">(type de compte)</span></label><select id="f-env">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select></div>
         <div class="field"><label>Quantité</label><input id="f-qty" inputmode="decimal" value="${esc(p.qty)}"></div>
         <div class="field"><label>Prix d'achat (devise choisie)</label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}"></div>
         <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
       </div>
-      <div class="field"><label>Symbole de cotation <span class="mut" style="font-weight:400">(pour les cours et le graphique en direct)</span></label><input id="f-ysym" value="${esc(p.ysym||"")}" placeholder="NVDA · MC.PA (LVMH) · UBI.PA (Ubisoft) · CSPX.L (ETF S&P500) · BTC-EUR"></div>
+      <div class="field"><label>Symbole de cotation <span class="mut" style="font-weight:400">(rempli tout seul par la recherche ci-dessus - à modifier seulement si besoin)</span></label><input id="f-ysym" value="${esc(p.ysym||"")}" placeholder="Se remplit quand tu choisis une valeur dans la recherche"></div>
       <div class="field" id="unit-field" style="display:none"><label>Unité <span class="mut" style="font-weight:400">(pour les métaux)</span></label><select id="f-unit"><option value="once" ${(p.unit||"once")==="once"?"selected":""}>Once (~31 g)</option><option value="gramme" ${p.unit==="gramme"?"selected":""}>Gramme</option><option value="kg" ${p.unit==="kg"?"selected":""}>Kilo</option><option value="livre" ${p.unit==="livre"?"selected":""}>Livre (~454 g)</option></select></div>
+      <details class="lexique"><summary>C'est quoi ces mots ? (petit lexique)</summary><div class="lx">
+        <div><b>Action</b> : une part d'une entreprise cotée en Bourse (ex : LVMH, Apple).</div>
+        <div><b>ETF</b> : un panier qui suit tout un marché d'un coup (ex : les 500 plus grandes entreprises américaines). Simple et diversifié en un seul achat.</div>
+        <div><b>Crypto</b> : monnaie numérique (Bitcoin, Ethereum...).</div>
+        <div><b>Enveloppe</b> : le type de compte où tu détiens la valeur. <b>PEA</b> = avantage fiscal après 5 ans (actions surtout européennes) ; <b>CTO</b> = compte-titres classique, tout est permis ; il y a aussi assurance-vie, plateforme crypto...</div>
+        <div><b>Ticker</b> : le code court d'une valeur (MC pour LVMH, AAPL pour Apple).</div>
+        <div><b>Symbole de cotation</b> : le code précis qui sert à récupérer le cours en direct (ex : MC.PA = LVMH à Paris). Ici il se remplit tout seul quand tu choisis une valeur dans la recherche.</div>
+        <div><b>Once / gramme</b> : unités de poids pour les métaux (1 once = 31,1 g ; le cuivre se cote à la livre = 454 g).</div>
+        <div><b>PER</b> : le prix d'une action divisé par le bénéfice annuel par action. En clair : combien d'années de bénéfices tu paies pour l'acheter. Plus il est haut, plus l'action est "chère" par rapport à ce qu'elle gagne.</div>
+        <div><b>PRU</b> : prix de revient unitaire, c'est-à-dire ton prix d'achat moyen par unité.</div>
+      </div></details>
       <div style="display:flex;gap:8px"><button class="btn small" onclick="App.savePos()">${this.FORM==="new"?"Ajouter":"Enregistrer"}</button><button class="btn small ghost" onclick="App.closeForm()">Annuler</button></div>
     </div>`;
     this.onClassChange();
@@ -576,8 +611,38 @@ const App = {
     const isCash=c==="cash", isMetal=METALCLS.has(c), priced=(c==="action"||c==="etf"||c==="crypto");
     const box=(id,on)=>{ const el=$(id); if(el&&el.closest(".field")) el.closest(".field").style.display=on?"":"none"; };
     const uf=$("unit-field"); if(uf) uf.style.display=isMetal?"":"none";
-    box("f-ticker", priced); box("f-ysym", priced); box("f-qty", !isCash); box("f-pru", !isCash);
+    box("f-ticker", priced); box("f-ysym", priced); box("f-search", priced); box("f-qty", !isCash); box("f-pru", !isCash);
     const pl=$("f-price"); if(pl&&pl.closest(".field")){ const lab=pl.closest(".field").querySelector("label"); if(lab) lab.textContent = isCash?"Montant (ce que tu as)":"Prix actuel"; }
+  },
+  searchSym(q){
+    q=(q||"").trim(); const rc=$("f-search-res");
+    clearTimeout(this._srT);
+    if(q.length<2){ if(rc){ rc.className="searchres"; rc.innerHTML=""; } return; }
+    this._srT=setTimeout(async()=>{
+      try{
+        const r=await fetch(RELAIS+"?search="+encodeURIComponent(q),{cache:"no-store"});
+        const j=await r.json(); const res=(j&&j.results)||[]; this._searchRes=res;
+        const rc2=$("f-search-res"); if(!rc2) return;
+        if(!res.length){ rc2.className="searchres on"; rc2.innerHTML='<div class="srhint">Aucun résultat. Tu peux saisir le symbole à la main plus bas.</div>'; return; }
+        const tlab={EQUITY:"Action",ETF:"ETF",CRYPTOCURRENCY:"Crypto",MUTUALFUND:"Fonds",INDEX:"Indice",CURRENCY:"Devise"};
+        rc2.className="searchres on";
+        rc2.innerHTML=res.map((x,i)=>`<div class="sr" onclick="App.pickSymIdx(${i})"><div><div class="srname">${esc(x.name)}</div><div class="srsym">${esc(x.symbol)}</div></div><span class="srx">${tlab[x.type]||esc(x.type)}<br>${esc(x.exch||"")}</span></div>`).join("");
+      }catch(e){ const rc3=$("f-search-res"); if(rc3){ rc3.className="searchres on"; rc3.innerHTML='<div class="srhint">Recherche indisponible un instant. Réessaie.</div>'; } }
+    },300);
+  },
+  pickSymIdx(i){ const x=this._searchRes&&this._searchRes[i]; if(!x) return; this.pickSym(x.symbol,x.name,x.type); },
+  pickSym(sym,name,type){
+    const clsMap={EQUITY:"action",ETF:"etf",CRYPTOCURRENCY:"crypto",MUTUALFUND:"etf"};
+    const cs=$("f-cls"); if(cs && clsMap[type]){ cs.value=clsMap[type]; this.onClassChange(); }
+    if($("f-name")) $("f-name").value=name;
+    if($("f-ysym")) $("f-ysym").value=sym;
+    const sb2=$("f-search"); if(sb2) sb2.value=name;
+    const rc=$("f-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; }
+    // On va chercher le prix + la devise en direct pour remplir tout seul.
+    fetch(RELAIS+"?symbols="+encodeURIComponent(sym),{cache:"no-store"}).then(r=>r.json()).then(j=>{
+      const d=j&&j.quotes&&j.quotes[sym];
+      if(d&&d.price>0){ const pr=$("f-price"); if(pr) pr.value=String(Math.round(d.price*100)/100); if((d.currency==="USD"||d.currency==="EUR")&&$("f-cur")) $("f-cur").value=d.currency; }
+    }).catch(()=>{});
   },
   openForm(id){ if(id==="new") this._new=null; this.FORM=id==="new"?"new":id; this.renderForm(); const z=$("formzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
   closeForm(){ this.FORM=null; this._new=null; this.renderForm(); },
