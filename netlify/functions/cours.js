@@ -23,10 +23,25 @@ async function chart(symbol, range){
     range, points };
 }
 
+let MKT = { t:0, d:null };
+
 exports.handler = async (event) => {
   const qp = (event && event.queryStringParameters) || {};
   const done = (o, s=200) => ({ statusCode:s, headers:CORS, body:JSON.stringify(o) });
   try{
+    if(qp.market){
+      if(MKT.d && Date.now()-MKT.t < 45000) return done(MKT.d);
+      const get=async u=>{ try{ const r=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json"}}); return r.ok?await r.json():null; }catch(_){ return null; } };
+      const [fng,prices,glob,trending]=await Promise.all([
+        get("https://api.alternative.me/fng/?limit=1"),
+        get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,eur&include_24hr_change=true"),
+        get("https://api.coingecko.com/api/v3/global"),
+        get("https://api.coingecko.com/api/v3/search/trending")
+      ]);
+      const data={fng,prices,global:glob,trending};
+      MKT={t:Date.now(),d:data};
+      return done(data);
+    }
     if(qp.symbols){
       const list = qp.symbols.split(",").map(s=>s.trim()).filter(Boolean).slice(0,30);
       const out = {};

@@ -1,2 +1,14 @@
 [functions]
   directory = "netlify/functions"
+
+# La page se revalide a chaque ouverture : l'appli se met a jour toute seule,
+# plus jamais de version en cache qui traine.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
