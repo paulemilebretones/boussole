@@ -131,6 +131,11 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .envbar .top{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px}
 .envtrack{height:8px; background:var(--surface2); border-radius:99px; overflow:hidden}
 .envtrack > div{height:100%; background:var(--accent); border-radius:99px}
+.lnk{cursor:pointer; border-bottom:1px dotted var(--muted)}
+.lnk:hover{color:var(--accent); border-bottom-color:var(--accent)}
+.rangebar{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
+.rbtn{border:1px solid var(--line); background:var(--surface2); color:var(--muted); border-radius:8px; padding:5px 11px; font-size:13px; font-weight:600}
+.rbtn.on{background:var(--accent-weak); color:var(--accent); border-color:var(--accent-line)}
 </style>
 </head>
 <body>
@@ -346,11 +351,21 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 function setBadge(state){ const el=$("savebadge"); if(!el) return; const m=({pending:["Sauvegarde…","var(--muted)"],ok:["✓ Sauvegardé","var(--gain)"],err:["⚠ non sauvegardé","var(--loss)"]})[state]||["",""]; el.textContent=m[0]; el.style.color=m[1]; }
 function applyRate(r){ const el=$("ratechip"); if(el) el.textContent="1 € = "+(r||1.16).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:3})+" $"; }
 
+const RELAIS="/.netlify/functions/cours";
+const RANGELABEL={ "1d":"1 jour","5d":"1 semaine","1mo":"1 mois","6mo":"6 mois","ytd":"depuis janvier","1y":"1 an","5y":"5 ans","max":"max" };
+function lineChart(points, up){
+  const vals=points.map(p=>p.c), n=points.length, W=680, H=180, pad=8;
+  let min=vals[0], max=vals[0]; for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
+  const span=(max-min)||1, x=i=>pad+i*(W-2*pad)/(n-1), y=v=>H-pad-(v-min)/span*(H-2*pad);
+  const pts=points.map((p,i)=>x(i).toFixed(1)+","+y(p.c).toFixed(1));
+  const col=up?"#4CC38A":"#F2846B", area="M"+pad+","+(H-pad)+" L"+pts.join(" L")+" L"+x(n-1).toFixed(1)+","+(H-pad)+" Z";
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:180px;display:block"><defs><linearGradient id="cfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.25"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#cfill)"/><polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+}
 const COINS={btc:"bitcoin",xbt:"bitcoin",eth:"ethereum",sol:"solana",ada:"cardano",xrp:"ripple",bnb:"binancecoin",doge:"dogecoin",dot:"polkadot",matic:"matic-network",pol:"matic-network",ltc:"litecoin",link:"chainlink",avax:"avalanche-2",atom:"cosmos",uni:"uniswap",trx:"tron",xlm:"stellar",algo:"algorand",xmr:"monero",bch:"bitcoin-cash",near:"near",apt:"aptos",arb:"arbitrum",op:"optimism",sui:"sui",shib:"shiba-inu",pepe:"pepe",ton:"the-open-network"};
 function coinId(p){ const t=(p.ticker||"").toLowerCase().trim(), n=(p.name||"").toLowerCase().trim(); return COINS[t]||COINS[n]||null; }
 
 const App = {
-  tab:"portfolio", email:"", meta:{}, lastSync:0,
+  tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null,
   S:{positions:[], rate:1.16, snapshots:[], tdKey:""}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
@@ -418,16 +433,13 @@ const App = {
         : `<div class="secrow">${Lock.bioAvailable()?`<button class="btn small" onclick="App.enableBio()">Activer Face ID / Touch ID</button>`:""}<button class="btn small ghost" onclick="App.enableCode()">Definir un code</button></div>${Lock.bioAvailable()?"":`<div class="mut" style="margin-top:8px;font-size:11.5px">Face ID apparaitra une fois l'appli en ligne (HTTPS).</div>`}`}
     </div>
     <div class="card" style="max-width:520px; margin-top:14px">
-      <div class="mlab" style="margin-bottom:10px">Donnees et cours des actions</div>
+      <div class="mlab" style="margin-bottom:10px">Mes donnees</div>
       <div class="secrow" style="margin-bottom:14px">
         <button class="btn small ghost" onclick="App.exportData()">Exporter mes donnees</button>
         <button class="btn small ghost" onclick="document.getElementById('importfile').click()">Importer un fichier</button>
         <input type="file" id="importfile" accept="application/json,.json" style="display:none" onchange="App.importData(event)">
       </div>
-      <a class="btn small ghost" href="https://twelvedata.com/register" target="_blank" rel="noopener" style="display:inline-block;text-align:center;text-decoration:none;margin-bottom:10px">Creer ma cle gratuite sur Twelve Data ↗</a>
-      <div class="field"><label for="pf-tdkey">Cle Twelve Data (optionnel, actualise actions et ETF)</label><input id="pf-tdkey" value="${esc(this.S.tdKey||"")}" placeholder="colle ta cle ici"></div>
-      <button class="btn small" onclick="App.saveTdKey()">Enregistrer la cle</button>
-      <div class="mut" style="margin-top:8px;font-size:11.5px">Une seule fois : tu colles la cle ici, elle reste sur ton compte pour tous tes appareils. Sans cle, tu tapes les prix actions/ETF a la main.</div>
+      <div class="mut" style="font-size:12px">Les cours (actions EU/US, ETF, crypto) se mettent a jour tout seuls avec le bouton <b>↻ Cours</b> du portefeuille, et le graphique s'affiche en cliquant sur le nom d'une ligne. Rien a configurer, aucune cle.</div>
     </div>`;
   },
   async saveProfil(){
@@ -449,7 +461,7 @@ const App = {
       rows+=`<tr class="grouphead"><td colspan="8"><span class="sw" style="background:${CLS[k].c}"></span>${CLS[k].l}<span style="float:right;font-family:'JetBrains Mono',monospace">${eurF.format(sub)}</span></td></tr>`;
       rows+=list.map(p=>{ const q=+p.qty||0, ve=this.toEur(q*(+p.price||0),p.cur), ce=this.toEur(q*(+p.pru||0),p.cur), pnl=ve-ce, pct=ce>0?pnl/ce*100:0, cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v);
         return `<tr>
-          <td><b>${esc(p.name)}</b>${p.ticker?` <span class="mut">${esc(p.ticker)}</span>`:""}</td>
+          <td><b class="lnk" onclick="App.openChart('${p.id}')">${esc(p.name)}</b>${p.ticker?` <span class="mut">${esc(p.ticker)}</span>`:""}</td>
           <td><span class="pill">${esc(p.env||"")}</span></td>
           <td class="num">${q.toLocaleString("fr-FR",{maximumFractionDigits:8})}</td>
           <td class="num">${cf(+p.pru||0)}</td>
@@ -460,7 +472,7 @@ const App = {
         </tr>`; }).join("");
     }
     $("view").innerHTML=`
-      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div><button class="btn small ghost" onclick="App.syncCrypto()">↻ Crypto</button><button class="btn small ghost" onclick="App.syncStocks()">↻ Actions/ETF</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
+      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div><button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
       <div class="card hero">
         <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
           <div style="flex:1; min-width:190px">
@@ -475,6 +487,7 @@ const App = {
       </div>
       ${(this.S.snapshots&&this.S.snapshots.length>=2)?`<div class="card"><div class="viewhead" style="margin-bottom:10px"><div class="mlab">Evolution de la valeur</div><div class="grow"></div><span class="mono mut" style="font-size:12px">${this.S.snapshots.length} jours</span></div>${evoChart(this.S.snapshots)}<div class="mut" style="font-size:12px;margin-top:8px">${(()=>{ const s=this.S.snapshots, dd=s[s.length-1].v-s[0].v, pc=s[0].v?dd/s[0].v*100:0; return "Depuis le debut du suivi : "+(dd>=0?'+':'')+eurF.format(dd)+" ("+(pc>=0?'+':'')+pc.toFixed(1)+" %)"; })()}</div></div>`:""}
       <div id="formzone"></div>
+      <div id="chartzone">${this.CHART?this.chartCard():""}</div>
       <div class="card" style="padding:${has?'6px 8px':'18px'}">
         ${has?`<div class="tablewrap"><table class="list"><thead><tr><th>Position</th><th>Enveloppe</th><th class="num">Qté</th><th class="num">Prix d'achat</th><th class="num">Prix actuel</th><th class="num">Valeur (€)</th><th class="num">+/-</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
           :`<div class="empty"><div class="big">🧭</div>Ton portefeuille est vide.<br><span class="mut">Ajoute ta premiere ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».</span></div>`}
@@ -502,6 +515,7 @@ const App = {
         <div class="field"><label>Prix d'achat (devise choisie)</label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}"></div>
         <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
       </div>
+      <div class="field"><label>Symbole de cotation <span class="mut" style="font-weight:400">(pour les cours et le graphique en direct)</span></label><input id="f-ysym" value="${esc(p.ysym||"")}" placeholder="NVDA · MC.PA (LVMH) · UBI.PA (Ubisoft) · CSPX.L (ETF S&P500) · BTC-EUR"></div>
       <div style="display:flex;gap:8px"><button class="btn small" onclick="App.savePos()">${this.FORM==="new"?"Ajouter":"Enregistrer"}</button><button class="btn small ghost" onclick="App.closeForm()">Annuler</button></div>
     </div>`;
   },
@@ -510,45 +524,66 @@ const App = {
   savePos(){
     const g=id=>$(id).value, num=v=>parseFloat(String(v).replace(",",".").replace(/\s/g,""))||0;
     const name=g("f-name").trim(); if(!name){ alert("Donne un nom a la position."); return; }
-    const data={cls:g("f-cls"),cur:g("f-cur")==="USD"?"USD":"EUR",name,ticker:g("f-ticker").trim(),env:g("f-env"),qty:num(g("f-qty")),pru:num(g("f-pru")),price:num(g("f-price"))};
+    const data={cls:g("f-cls"),cur:g("f-cur")==="USD"?"USD":"EUR",name,ticker:g("f-ticker").trim(),ysym:g("f-ysym").trim(),env:g("f-env"),qty:num(g("f-qty")),pru:num(g("f-pru")),price:num(g("f-price"))};
     if(this.FORM==="new") this.S.positions.push({id:uid(),...data});
     else { const p=this.S.positions.find(x=>x.id===this.FORM); if(p) Object.assign(p,data); }
     this.FORM=null; this._new=null; this.save(); this.render();
   },
   delPos(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; if(!confirm(`Supprimer ${p.name} ?`)) return; this.S.positions=this.S.positions.filter(x=>x.id!==id); this.save(); this.render(); },
-  async syncCrypto(){
-    const cryptos=this.S.positions.filter(p=>p.cls==="crypto");
-    const map={}, ids=[];
-    for(const p of cryptos){ const id=coinId(p); if(id){ map[p.id]=id; if(!ids.includes(id)) ids.push(id); } }
-    if(!ids.length){ alert("Aucune crypto reconnue. Renseigne le ticker (BTC, ETH, SOL…) sur tes lignes crypto pour recuperer leur cours."); return; }
+  ysym(p){
+    if(p.ysym) return String(p.ysym).trim();
+    const t=(p.ticker||"").trim();
+    if(p.cls==="crypto"){ const b=(t||(p.name||"")).toUpperCase().replace(/[^A-Z0-9]/g,""); return b?b+"-"+(p.cur==="USD"?"USD":"EUR"):""; }
+    if(p.cls==="or" && !t) return "GC=F";
+    return t;
+  },
+  async syncCours(){
+    const map={}, syms=[];
+    for(const p of this.S.positions){ const s=this.ysym(p); if(s){ map[p.id]=s; if(!syms.includes(s)) syms.push(s); } }
+    if(!syms.length){ alert("Renseigne le symbole de cotation de tes lignes (ex : NVDA, MC.PA, BTC-EUR) pour recuperer les cours."); return; }
+    setBadge("pending");
     try{
-      const j=await Market.cfetch("https://api.coingecko.com/api/v3/simple/price?ids="+ids.join(",")+"&vs_currencies=usd,eur",30000);
-      for(const p of cryptos){ const id=map[p.id]; if(id&&j[id]){ p.price = p.cur==="USD" ? j[id].usd : j[id].eur; } }
+      const r=await fetch(RELAIS+"?symbols="+encodeURIComponent(syms.join(",")),{cache:"no-store"});
+      const j=await r.json(); const q=(j&&j.quotes)||{};
+      let n=0, fail=0;
+      for(const p of this.S.positions){ const s=map[p.id]; if(!s) continue; const d=q[s];
+        if(d&&d.price>0){ p.price=d.price; if(d.currency==="USD"||d.currency==="EUR") p.cur=d.currency; n++; } else fail++; }
       this.lastSync=Date.now(); this.save(); this.render();
-    }catch(e){ alert("Cours crypto indisponibles (limite de l'API gratuite). Reessaie dans une minute."); }
+      if(fail) setTimeout(()=>alert(n+" cours mis a jour, "+fail+" non reconnu(s). Ouvre la ligne (crayon) et renseigne son symbole : ex MC.PA (LVMH), CSPX.L (ETF), BTC-EUR."),60);
+    }catch(e){ setBadge("err"); alert("Cours indisponibles a l'instant, reessaie dans un moment."); }
   },
   preset(i){
     const pr=PRESETS[i]; if(!pr) return;
-    this._new={cls:pr.cls,cur:pr.cur,name:pr.name,ticker:pr.ticker,env:pr.env,qty:"",pru:"",price:""};
+    this._new={cls:pr.cls,cur:pr.cur,name:pr.name,ticker:pr.ticker,ysym:pr.ysym||"",env:pr.env,qty:"",pru:"",price:""};
     this.renderForm();
     if(pr.cls==="crypto" && pr.ticker){ const id=COINS[pr.ticker.toLowerCase()]; if(id) Market.cfetch("https://api.coingecko.com/api/v3/simple/price?ids="+id+"&vs_currencies=usd,eur",30000).then(j=>{ if(j&&j[id]&&this._new&&this.FORM==="new"){ this._new.price=String(pr.cur==="USD"?j[id].usd:j[id].eur); this.renderForm(); } }).catch(()=>{}); }
   },
   enableBio(){ Lock.setupBio().then(ok=>{ if(ok){ alert("Face ID active sur cet appareil."); this.render(); } else { alert("Activation annulee (ou refusee par l'appareil)."); } }); },
   enableCode(){ const c=prompt("Choisis un code (4 a 8 chiffres) pour verrouiller l'appli sur cet appareil :"); if(c==null) return; Lock.setupCode(c.trim()).then(ok=>{ if(ok){ alert("Code active."); this.render(); } }); },
   disableLock(){ if(confirm("Desactiver le verrouillage sur cet appareil ?")){ Lock.clear(); this.render(); } },
-  saveTdKey(){ this.S.tdKey=(($("pf-tdkey")||{}).value||"").trim(); this.save(); alert(this.S.tdKey?"Cle enregistree. Utilise le bouton « Actions/ETF » dans le portefeuille.":"Cle effacee."); },
-  async syncStocks(){
-    const key=(this.S.tdKey||"").trim();
-    if(!key){ alert("Ajoute d'abord ta cle Twelve Data (gratuite) dans l'onglet Profil."); this.go("profil"); return; }
-    const stocks=this.S.positions.filter(p=>p.cls==="etf"||p.cls==="action");
-    if(!stocks.length){ alert("Aucune action ou ETF a mettre a jour."); return; }
-    let n=0, fail=0;
-    for(const p of stocks){ const sym=(p.ticker||"").trim(); if(!sym){ fail++; continue; }
-      try{ const j=await Market.cfetch("https://api.twelvedata.com/price?symbol="+encodeURIComponent(sym)+"&apikey="+encodeURIComponent(key),60000); const px=parseFloat(j&&j.price); if(px>0){ p.price=px; n++; } else fail++; }
-      catch(e){ fail++; }
-    }
-    this.lastSync=Date.now(); this.save(); this.render();
-    alert(n+" ligne(s) actualisee(s)"+(fail?" ; "+fail+" non trouvee(s) : verifie le ticker (certaines valeurs europeennes demandent le suffixe d'echange, ex MC:Euronext)":"")+".");
+  openChart(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; this.CHART={id, range:"1mo", rendered:""}; this.renderPortfolio(); this.loadChart(); const z=$("chartzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
+  closeChart(){ this.CHART=null; this.renderPortfolio(); },
+  chartRange(r){ if(!this.CHART) return; this.CHART.range=r; this.renderPortfolio(); this.loadChart(); },
+  chartCard(){
+    const p=this.S.positions.find(x=>x.id===this.CHART.id); if(!p) return "";
+    const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
+    return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><h3 style="font-size:17px">${esc(p.name)} <span class="mut" style="font-size:13px">${esc(this.ysym(p)||"?")}</span></h3><div class="grow"></div><button class="rowbtn" title="Fermer" onclick="App.closeChart()">✕</button></div>
+      <div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.CHART.range===r[0]?' on':''}" onclick="App.chartRange('${r[0]}')">${r[1]}</button>`).join("")}</div>
+      <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div>`;
+  },
+  async loadChart(){
+    if(!this.CHART) return; const p=this.S.positions.find(x=>x.id===this.CHART.id); if(!p) return;
+    const sym=this.ysym(p), box=$("chartbox");
+    if(!sym){ const h='<div class="mut">Renseigne le symbole de cotation de cette ligne (bouton crayon) pour voir le graphique.</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; return; }
+    try{
+      const r=await fetch(RELAIS+"?symbol="+encodeURIComponent(sym)+"&range="+this.CHART.range,{cache:"no-store"});
+      const d=await r.json();
+      if(!d||!d.points||d.points.length<2){ const h='<div class="mut">Pas de donnees pour « '+esc(sym)+' ». Verifie le symbole (crayon).</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; return; }
+      const pts=d.points.map(x=>x.c), last=pts[pts.length-1], first=pts[0], up=last>=first, pc=first?(last-first)/first*100:0;
+      const cf=v=> d.currency==="USD"?usdF.format(v):(d.currency==="EUR"?eurF.format(v):(v.toFixed(2)+" "+(d.currency||"")));
+      const h=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.CHART.range]||this.CHART.range}</span></div>${lineChart(d.points, up)}`;
+      this.CHART.rendered=h; if(box) box.innerHTML=h;
+    }catch(e){ const h='<div class="mut">Graphique indisponible a l\'instant.</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; }
   },
   exportData(){
     const blob=new Blob([JSON.stringify({app:"boussole-cloud", exportedAt:new Date().toISOString(), pseudo:this.meta.pseudo||"", positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[]}, null, 2)], {type:"application/json"});
@@ -625,8 +660,8 @@ async function sha(s){ const b=await crypto.subtle.digest("SHA-256", new TextEnc
 const PRESETS=[
   {label:"₿ Bitcoin",cls:"crypto",cur:"USD",name:"Bitcoin",ticker:"BTC",env:"Plateforme crypto"},
   {label:"Ξ Ethereum",cls:"crypto",cur:"USD",name:"Ethereum",ticker:"ETH",env:"Plateforme crypto"},
-  {label:"ETF Monde",cls:"etf",cur:"EUR",name:"ETF Monde",ticker:"CW8",env:"PEA"},
-  {label:"S&P 500",cls:"etf",cur:"USD",name:"S&P 500",ticker:"CSPX",env:"CTO"},
+  {label:"ETF Monde",cls:"etf",cur:"EUR",name:"ETF Monde",ticker:"CW8",ysym:"CW8.PA",env:"PEA"},
+  {label:"S&P 500",cls:"etf",cur:"USD",name:"S&P 500",ticker:"CSPX",ysym:"CSPX.L",env:"CTO"},
   {label:"Or",cls:"or",cur:"EUR",name:"Or",ticker:"",env:"Livret / cash"},
   {label:"Action",cls:"action",cur:"EUR",name:"",ticker:"",env:"PEA"}
 ];
