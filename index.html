@@ -587,7 +587,7 @@ const App = {
       <div class="frow c4">
         <div class="field"><label>Enveloppe <span class="mut" style="font-weight:400">(type de compte)</span></label><select id="f-env">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select></div>
         <div class="field"><label>Quantité</label><input id="f-qty" inputmode="decimal" value="${esc(p.qty)}"></div>
-        <div class="field"><label>Prix d'achat (devise choisie)</label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}"></div>
+        <div class="field"><label>Prix d'achat <span class="mut" style="font-weight:400">(par unité - une estimation suffit)</span></label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}" placeholder="Ex : ton prix d'achat, même approximatif"></div>
         <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
       </div>
       <div class="field"><label>Symbole de cotation <span class="mut" style="font-weight:400">(rempli tout seul par la recherche ci-dessus - à modifier seulement si besoin)</span></label><input id="f-ysym" value="${esc(p.ysym||"")}" placeholder="Se remplit quand tu choisis une valeur dans la recherche"></div>
@@ -641,14 +641,19 @@ const App = {
     const rc=$("f-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; }
     // On recupere le prix en direct. IMPORTANT: on ne remplit le prix que s'il est ENCORE VIDE
     // (jamais par-dessus une valeur que tu tapes) et si la valeur choisie est toujours la meme.
-    const pr=$("f-price"); const priceEmptyAtPick = pr ? (pr.value.trim()==="") : false;
-    if(pr && priceEmptyAtPick) pr.placeholder="Prix récupéré automatiquement…";
+    const pruPH="Ex : ton prix d'achat, même approximatif";
+    const pr=$("f-price"), pru=$("f-pru");
+    if(pr && pr.value.trim()==="") pr.placeholder="Prix récupéré automatiquement…";
+    if(pru && pru.value.trim()==="") pru.placeholder="Estimation : le cours du jour…";
     fetch(RELAIS+"?symbols="+encodeURIComponent(sym),{cache:"no-store"}).then(r=>r.json()).then(j=>{
       const d=j&&j.quotes&&j.quotes[sym];
-      const pr2=$("f-price"); const ys=$("f-ysym");
+      const pr2=$("f-price"), pru2=$("f-pru"), ys=$("f-ysym");
       const stillSame = ys && ys.value===sym;
-      if(pr2){ pr2.placeholder=""; if(d&&d.price>0 && stillSame && pr2.value.trim()===""){ pr2.value=String(Math.round(d.price*100)/100); if((d.currency==="USD"||d.currency==="EUR")&&$("f-cur")) $("f-cur").value=d.currency; } }
-    }).catch(()=>{ const pr3=$("f-price"); if(pr3) pr3.placeholder=""; });
+      const val = (d&&d.price>0) ? String(Math.round(d.price*100)/100) : null;
+      if(pr2){ pr2.placeholder=""; if(val && stillSame && pr2.value.trim()===""){ pr2.value=val; if((d.currency==="USD"||d.currency==="EUR")&&$("f-cur")) $("f-cur").value=d.currency; } }
+      // Prix d'achat pre-rempli avec le cours du jour comme ESTIMATION (modifiable), si tu ne l'as pas saisi.
+      if(pru2){ pru2.placeholder=pruPH; if(val && stillSame && pru2.value.trim()===""){ pru2.value=val; } }
+    }).catch(()=>{ const pr3=$("f-price"); if(pr3) pr3.placeholder=""; const pru3=$("f-pru"); if(pru3) pru3.placeholder=pruPH; });
   },
   openForm(id){ if(id==="new") this._new=null; this.FORM=id==="new"?"new":id; this.renderForm(); const z=$("formzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
   closeForm(){ this.FORM=null; this._new=null; this.renderForm(); },
