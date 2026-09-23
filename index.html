@@ -296,7 +296,8 @@ Object.assign(I18N, {
   "Note":"Note", "(facultatif)":"(optional)", "Ajouter le rappel":"Add the reminder",
   "Aucun rappel pour l'instant.":"No reminders yet.", "Ajoute un achat régulier (ex : 150 € d'ETF Monde le 5 de chaque mois).":"Add a recurring buy (e.g. 150 € of a World ETF on the 5th of each month).",
   "À faire":"To do", "À venir":"Upcoming", "✓ Fait ce mois-ci":"✓ Done this month", "✓ Fait":"✓ Done", "Voir":"See",
-  "Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.":"Reminders show when you open the app. A web app cannot send a notification while closed on iPhone."
+  "Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.":"Reminders show when you open the app. A web app cannot send a notification while closed on iPhone.",
+  "Fear & Greed (actions US)":"Fear & Greed (US stocks)", "Indice CNN (marché actions), informatif.":"CNN index (stock market), for information."
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -914,12 +915,18 @@ const Market={
     try{
       const j=await this.cfetch(RELAIS+"?symbols="+encodeURIComponent(list.map(x=>x[0]).join(",")),60000);
       const q=(j&&j.quotes)||{};
+      let head="";
+      if(this.view==="bourse"){
+        try{ const m=await this.cfetch(RELAIS+"?market=1",45000); const sf=m&&m.stockFng, sc=sf&&sf.score;
+          if(sc!=null){ const v=Math.round(sc); head=`<div class="mcard"><div class="mlab">Fear &amp; Greed (actions US)</div><div class="fngval">${v}<span class="fngmax">/100</span></div><div class="fngtrack"><div class="fngmark" style="left:${v}%"></div></div><div style="font-weight:700">${this.fngLabel(v)}</div><div class="mut" style="font-size:11px;margin-top:6px">Indice CNN (marché actions), informatif.</div></div>`; }
+        }catch(_){}
+      }
       const cards=list.map(([sym,name])=>{ const d=q[sym];
         if(!d||!(d.price>0)) return `<div class="mcard"><div class="mlab">${name}</div><div class="mut">indisponible</div></div>`;
         const ch=d.prevClose?((d.price-d.prevClose)/d.prevClose*100):0, up=ch>=0;
         const cf=d.currency==="EUR"?eurF.format(d.price):(d.currency==="USD"?usdF.format(d.price):d.price.toLocaleString("fr-FR",{maximumFractionDigits:4})+" "+(d.currency||""));
         return `<div class="mcard" style="cursor:pointer" onclick="Market.openChart('${sym}','${name}')"><div class="mlab">${name}</div><div class="mprice">${cf}</div><div class="${up?'up':'down'}" style="font-weight:700;margin-top:4px">${up?'+':''}${ch.toFixed(2)} % <span class="mut" style="font-size:11px;font-weight:400">(jour)</span></div></div>`; }).join("");
-      box.innerHTML=`<div class="mgrid">${cards}</div><div class="mut" style="text-align:center;margin-top:14px">Clique un marché pour son graphique. Données informatives, aucun conseil.</div>`;
+      box.innerHTML=`<div class="mgrid">${head}${cards}</div><div class="mut" style="text-align:center;margin-top:14px">Clique un marché pour son graphique. Données informatives, aucun conseil.</div>`;
     }catch(e){ box.innerHTML=`<div class="mcard">Marchés indisponibles a l'instant, réessaie.</div>`; }
   },
   async loadChart(box){

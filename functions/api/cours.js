@@ -30,13 +30,15 @@ export async function onRequestGet(context){
     if(qp.market){
       if(MKT.d && Date.now()-MKT.t < 45000) return done(MKT.d);
       const get=async u=>{ try{ const r=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json"}}); return r.ok?await r.json():null; }catch(_){ return null; } };
-      const [fng,prices,glob,trending]=await Promise.all([
+      const [fng,prices,glob,trending,cnn]=await Promise.all([
         get("https://api.alternative.me/fng/?limit=1"),
         get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,eur&include_24hr_change=true"),
         get("https://api.coingecko.com/api/v3/global"),
-        get("https://api.coingecko.com/api/v3/search/trending")
+        get("https://api.coingecko.com/api/v3/search/trending"),
+        get("https://production.dataviz.cnn.com/index/fearandgreed/graphdata")
       ]);
-      const data={fng,prices,global:glob,trending};
+      let stockFng=null; if(cnn&&cnn.fear_and_greed){ stockFng={score:cnn.fear_and_greed.score, rating:cnn.fear_and_greed.rating}; }
+      const data={fng,prices,global:glob,trending,stockFng};
       MKT={t:Date.now(),d:data};
       return done(data);
     }
