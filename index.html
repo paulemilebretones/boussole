@@ -144,6 +144,17 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .rembadge.due{background:var(--accent);color:#0C1120}
 .rembadge.soon{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
 .rembadge.done{background:rgba(24,168,134,.18);color:var(--gain)}
+.rcal-head{font-weight:700;text-transform:capitalize;margin-bottom:12px;font-size:15px}
+.rcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.rcal-dow{text-align:center;font-size:11px;color:var(--muted);font-weight:700;padding-bottom:2px}
+.rcal-cell{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;color:var(--ink);background:var(--surface2)}
+.rcal-cell.empty{background:transparent}
+.rcal-cell.today{outline:2px solid var(--accent);outline-offset:-2px}
+.rcal-cell.has{font-weight:800}
+.rcal-cell.due{background:var(--accent);color:#0C1120}
+.rcal-cell.done{background:rgba(24,168,134,.20);color:var(--gain)}
+.rcal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.rcal-cell.due .rcal-dot,.rcal-cell.done .rcal-dot{display:none}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -297,7 +308,8 @@ Object.assign(I18N, {
   "Aucun rappel pour l'instant.":"No reminders yet.", "Ajoute un achat régulier (ex : 150 € d'ETF Monde le 5 de chaque mois).":"Add a recurring buy (e.g. 150 € of a World ETF on the 5th of each month).",
   "À faire":"To do", "À venir":"Upcoming", "✓ Fait ce mois-ci":"✓ Done this month", "✓ Fait":"✓ Done", "Voir":"See",
   "Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.":"Reminders show when you open the app. A web app cannot send a notification while closed on iPhone.",
-  "Fear & Greed (actions US)":"Fear & Greed (US stocks)", "Indice CNN (marché actions), informatif.":"CNN index (stock market), for information."
+  "Fear & Greed (actions US)":"Fear & Greed (US stocks)", "Indice CNN (marché actions), informatif.":"CNN index (stock market), for information.",
+  "Les jours avec une pastille ont un rappel d'achat.":"Days with a dot have a buy reminder."
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -742,6 +754,28 @@ const App = {
   },
   delRem(id){ const r=(this.S.reminders||[]).find(x=>x.id===id); if(!r) return; if(!confirm(`Supprimer le rappel « ${r.asset} » ?`)) return; this.S.reminders=this.S.reminders.filter(x=>x.id!==id); if(this.remEdit===id) this.remEdit=null; this.save(); this.renderRappels(); },
   toggleRemDone(id){ const r=(this.S.reminders||[]).find(x=>x.id===id); if(!r) return; const m=new Date().toISOString().slice(0,7); r.lastDone=(r.lastDone===m)?"":m; this.save(); this.renderRappels(); },
+  remCalendar(){
+    const rem=this.S.reminders||[];
+    const now=new Date(), year=now.getFullYear(), month=now.getMonth();
+    const curMonth=now.toISOString().slice(0,7), today=now.getDate();
+    const byDay={}; for(const r of rem){ const d=Math.min(28,Math.max(1,+r.day||1)); (byDay[d]=byDay[d]||[]).push(r); }
+    const startDow=(new Date(year,month,1).getDay()+6)%7;
+    const daysInMonth=new Date(year,month+1,0).getDate();
+    const en=LANG==="en";
+    const monthName=now.toLocaleDateString(en?"en-US":"fr-FR",{month:"long",year:"numeric"});
+    const dows=en?["M","T","W","T","F","S","S"]:["L","M","M","J","V","S","D"];
+    let cells="";
+    for(let i=0;i<startDow;i++) cells+=`<div class="rcal-cell empty"></div>`;
+    for(let d=1;d<=daysInMonth;d++){
+      const rs=byDay[d]||[], has=rs.length>0, isToday=d===today;
+      const done = has && rs.every(r=>r.lastDone===curMonth);
+      const due = has && !done && d<=today;
+      const cls=["rcal-cell", isToday?"today":"", has?"has":"", due?"due":"", (done&&!due)?"done":""].filter(Boolean).join(" ");
+      const tip = has ? rs.map(r=>(r.asset||"?")+" "+this.remAmt(r)).join(", ") : "";
+      cells+=`<div class="${cls}" title="${esc(tip)}">${d}${has?`<span class="rcal-dot"></span>`:""}</div>`;
+    }
+    return `<div class="card rcal"><div class="rcal-head">${esc(monthName)}</div><div class="rcal-grid">${dows.map(x=>`<div class="rcal-dow">${x}</div>`).join("")}${cells}</div><div class="mut" style="font-size:11.5px;margin-top:10px">Les jours avec une pastille ont un rappel d'achat.</div></div>`;
+  },
   renderRappels(){
     const rem=this.S.reminders||[];
     const now=new Date(), curMonth=now.toISOString().slice(0,7), curDay=now.getDate();
@@ -776,6 +810,7 @@ const App = {
         <div class="field"><label>Note <span class="mut" style="font-weight:400">(facultatif)</span></label><input id="r-note" value="${esc(f.note||"")}" placeholder="Ex : sur le PEA, versement du mois"></div>
         <div style="display:flex;gap:8px"><button class="btn small" onclick="App.saveRem()">${ed?"Enregistrer":"Ajouter le rappel"}</button>${ed?`<button class="btn small ghost" onclick="App.cancelRem()">Annuler</button>`:""}</div>
       </div>
+      ${rem.length?this.remCalendar():""}
       ${rem.length?`<div class="mut" style="text-align:center;margin:2px 0 12px">Total prévu par mois : <b style="color:var(--ink)">${eurF.format(monthTotal)}</b> si tu fais tous tes achats.</div>`:""}
       <div class="remlist">${items}</div>
       <div class="mut" style="text-align:center;margin-top:10px">Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.</div>`;
