@@ -314,7 +314,9 @@ Object.assign(I18N, {
   "Le VIX mesure la volatilité attendue du S&P 500 : bas = calme, haut = peur. Informatif.":"The VIX measures expected S&P 500 volatility: low = calm, high = fear. For information.",
   "Notifications":"Notifications", "Reçois une notification le matin des jours où un achat est prévu (d'après tes rappels).":"Get a notification in the morning on days a buy is planned (from your reminders).",
   "Activer les notifications":"Enable notifications", "Activées sur cet appareil :":"Enabled on this device:",
-  "Sur iPhone : ajoute d'abord Boussole à ton écran d'accueil et ouvre-la depuis l'icône, sinon iOS bloque les notifications.":"On iPhone: first add Boussole to your home screen and open it from the icon, otherwise iOS blocks notifications."
+  "Sur iPhone : ajoute d'abord Boussole à ton écran d'accueil et ouvre-la depuis l'icône, sinon iOS bloque les notifications.":"On iPhone: first add Boussole to your home screen and open it from the icon, otherwise iOS blocks notifications.",
+  "Fréquence":"Frequency", "Chaque mois":"Every month", "Tous les 3 mois":"Every 3 months", "Tous les 6 mois":"Every 6 months", "Chaque année":"Every year", "Une seule fois":"Once",
+  "Date":"Date", "(1re échéance ; pour « chaque mois », seul le jour compte)":"(first date; for \"every month\", only the day matters)", "Programmé":"Scheduled"
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -770,10 +772,16 @@ const App = {
   enableCode(){ const c=prompt("Choisis un code (4 a 8 chiffres) pour verrouiller l'appli sur cet appareil :"); if(c==null) return; Lock.setupCode(c.trim()).then(ok=>{ if(ok){ alert("Code active."); this.render(); } }); },
   disableLock(){ if(confirm("Désactiver le verrouillage sur cet appareil ?")){ Lock.clear(); this.render(); } },
   remAmt(r){ return r.cur==="USD"?usdF.format(+r.amount||0):eurF.format(+r.amount||0); },
+  remN(r){ return r.everyN==null ? 1 : +r.everyN; },
+  remAnchor(r){ if(r.date){ const p=String(r.date).split("-").map(Number); return {y:p[0], m:(p[1]||1)-1, d:Math.min(28,Math.max(1,p[2]||1))}; } return {y:1970, m:0, d:Math.min(28,Math.max(1,+r.day||1))}; },
+  remOccursDay(r,y,m){ const a=this.remAnchor(r), N=this.remN(r); if(N===0) return (a.y===y && a.m===m)?a.d:0; const diff=(y-a.y)*12+(m-a.m); if(diff<0 || diff%N!==0) return 0; return a.d; },
+  remPeriodKey(r,y,m){ return this.remN(r)===0 ? "once" : (y+"-"+String(m+1).padStart(2,"0")); },
+  remDoneIn(r,y,m){ return !!r.lastDone && r.lastDone===this.remPeriodKey(r,y,m); },
+  remFreqLabel(r){ const N=this.remN(r), a=this.remAnchor(r), en=LANG==="en"; if(N===0){ const dt=new Date(a.y,a.m,a.d); return (en?"On ":"Le ")+a.d+" "+dt.toLocaleDateString(en?"en-US":"fr-FR",{month:"long",year:"numeric"})+(en?" (once)":" (une seule fois)"); } if(N===1) return en?("On the "+a.d+" of every month"):("Le "+a.d+" de chaque mois"); if(N===12){ const mn=new Date(2000,a.m,1).toLocaleDateString(en?"en-US":"fr-FR",{month:"long"}); return (en?"On ":"Le ")+a.d+" "+mn+(en?", every year":", chaque année"); } return en?("On the "+a.d+", every "+N+" months"):("Le "+a.d+", tous les "+N+" mois"); },
   remindersBanner(){
     const rem=this.S.reminders||[]; if(!rem.length) return "";
-    const now=new Date(), curMonth=now.toISOString().slice(0,7), curDay=now.getDate();
-    const due=rem.filter(r=> r.lastDone!==curMonth && curDay>=(+r.day||1));
+    const now=new Date(), y=now.getFullYear(), m=now.getMonth(), curDay=now.getDate();
+    const due=rem.filter(r=>{ const od=this.remOccursDay(r,y,m); return od>0 && curDay>=od && !this.remDoneIn(r,y,m); });
     if(!due.length) return "";
     const noms=due.slice(0,3).map(r=>esc(r.asset||"?")+" ("+this.remAmt(r)+")").join(", ");
     return `<div class="rembanner" onclick="App.go('rappels')"><div><b>⏰ ${due.length} achat${due.length>1?"s":""} à faire ce mois-ci</b><div class="mut" style="font-size:12.5px;margin-top:2px">${noms}${due.length>3?"…":""}</div></div><span class="rembtn">Voir</span></div>`;
@@ -783,19 +791,20 @@ const App = {
   saveRem(){
     const g=id=>($(id)?$(id).value:""), num=v=>parseFloat(String(v).replace(",",".").replace(/\s/g,""))||0;
     const asset=g("r-asset").trim(); if(!asset){ alert("Indique quoi acheter (ex : ETF Monde)."); return; }
-    let day=Math.round(num(g("r-day"))); if(!(day>=1)) day=1; if(day>28) day=28;
-    const data={asset, amount:num(g("r-amount")), cur:g("r-cur")==="USD"?"USD":"EUR", day, note:g("r-note").trim()};
-    if(this.remEdit){ const r=this.S.reminders.find(x=>x.id===this.remEdit); if(r) Object.assign(r,data); }
+    let everyN=parseInt(g("r-freq"),10); if(isNaN(everyN)) everyN=1;
+    let date=g("r-date"); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert("Choisis une date."); return; }
+    const data={asset, amount:num(g("r-amount")), cur:g("r-cur")==="USD"?"USD":"EUR", everyN, date, note:g("r-note").trim()};
+    if(this.remEdit){ const r=this.S.reminders.find(x=>x.id===this.remEdit); if(r){ delete r.day; Object.assign(r,data); } }
     else { if(!this.S.reminders) this.S.reminders=[]; this.S.reminders.push({id:uid(), ...data, lastDone:""}); }
     this.remEdit=null; this.save(); this.renderRappels();
   },
   delRem(id){ const r=(this.S.reminders||[]).find(x=>x.id===id); if(!r) return; if(!confirm(`Supprimer le rappel « ${r.asset} » ?`)) return; this.S.reminders=this.S.reminders.filter(x=>x.id!==id); if(this.remEdit===id) this.remEdit=null; this.save(); this.renderRappels(); },
-  toggleRemDone(id){ const r=(this.S.reminders||[]).find(x=>x.id===id); if(!r) return; const m=new Date().toISOString().slice(0,7); r.lastDone=(r.lastDone===m)?"":m; this.save(); this.renderRappels(); },
+  toggleRemDone(id){ const r=(this.S.reminders||[]).find(x=>x.id===id); if(!r) return; const now=new Date(); const key=this.remPeriodKey(r, now.getFullYear(), now.getMonth()); r.lastDone=(r.lastDone===key)?"":key; this.save(); this.renderRappels(); },
   remCalendar(){
     const rem=this.S.reminders||[];
     const now=new Date(), year=now.getFullYear(), month=now.getMonth();
     const curMonth=now.toISOString().slice(0,7), today=now.getDate();
-    const byDay={}; for(const r of rem){ const d=Math.min(28,Math.max(1,+r.day||1)); (byDay[d]=byDay[d]||[]).push(r); }
+    const byDay={}; for(const r of rem){ const od=this.remOccursDay(r,year,month); if(od>0)(byDay[od]=byDay[od]||[]).push(r); }
     const startDow=(new Date(year,month,1).getDay()+6)%7;
     const daysInMonth=new Date(year,month+1,0).getDate();
     const en=LANG==="en";
@@ -805,7 +814,7 @@ const App = {
     for(let i=0;i<startDow;i++) cells+=`<div class="rcal-cell empty"></div>`;
     for(let d=1;d<=daysInMonth;d++){
       const rs=byDay[d]||[], has=rs.length>0, isToday=d===today;
-      const done = has && rs.every(r=>r.lastDone===curMonth);
+      const done = has && rs.every(r=>this.remDoneIn(r,year,month));
       const due = has && !done && d<=today;
       const cls=["rcal-cell", isToday?"today":"", has?"has":"", due?"due":"", (done&&!due)?"done":""].filter(Boolean).join(" ");
       const tip = has ? rs.map(r=>(r.asset||"?")+" "+this.remAmt(r)).join(", ") : "";
@@ -815,17 +824,21 @@ const App = {
   },
   renderRappels(){
     const rem=this.S.reminders||[];
-    const now=new Date(), curMonth=now.toISOString().slice(0,7), curDay=now.getDate();
+    const now=new Date(), cy=now.getFullYear(), cm=now.getMonth(), curDay=now.getDate();
+    const pad2=n=>String(n).padStart(2,"0");
     const ed = this.remEdit ? rem.find(r=>r.id===this.remEdit) : null;
-    const f = ed || {asset:"",amount:"",cur:"EUR",day:5,note:""};
-    const monthTotal = rem.reduce((s,r)=> s+this.toEur(+r.amount||0, r.cur), 0);
-    const items = rem.length ? rem.slice().sort((a,b)=>(+a.day||1)-(+b.day||1)).map(r=>{
-      const done=r.lastDone===curMonth, due=!done && curDay>=(+r.day||1);
-      const badge = done?`<span class="rembadge done">✓ Fait ce mois-ci</span>`:(due?`<span class="rembadge due">À faire</span>`:`<span class="rembadge soon">À venir</span>`);
+    const f = ed || {asset:"",amount:"",cur:"EUR",everyN:1,date:"",note:""};
+    const fN = (f.everyN==null?1:+f.everyN);
+    const fDate = f.date || (cy+"-"+pad2(cm+1)+"-"+pad2(Math.min(28, f.day?+f.day:now.getDate())));
+    const monthTotal = rem.reduce((s,r)=> s + (this.remOccursDay(r,cy,cm)>0 ? this.toEur(+r.amount||0, r.cur) : 0), 0);
+    const items = rem.length ? rem.slice().sort((a,b)=>((this.remOccursDay(a,cy,cm)||99)-(this.remOccursDay(b,cy,cm)||99))).map(r=>{
+      const od=this.remOccursDay(r,cy,cm), done=this.remDoneIn(r,cy,cm);
+      const due = od>0 && !done && curDay>=od;
+      const badge = od===0?`<span class="rembadge soon">Programmé</span>`:(done?`<span class="rembadge done">✓ Fait ce mois-ci</span>`:(due?`<span class="rembadge due">À faire</span>`:`<span class="rembadge soon">À venir</span>`));
       return `<div class="remitem ${done?"isdone":(due?"isdue":"")}">
         <div style="flex:1">
           <div style="font-weight:700">${esc(r.asset||"(sans nom)")} <span class="mut" style="font-weight:400">· ${this.remAmt(r)}</span></div>
-          <div class="mut" style="font-size:12.5px;margin-top:2px">Le ${+r.day||1} de chaque mois${r.note?` · ${esc(r.note)}`:""}</div>
+          <div class="mut" style="font-size:12.5px;margin-top:2px">${esc(this.remFreqLabel(r))}${r.note?` · ${esc(r.note)}`:""}</div>
           <div style="margin-top:7px">${badge}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
@@ -842,13 +855,22 @@ const App = {
           <div class="field"><label>Quoi acheter <span class="mut" style="font-weight:400">(nom libre)</span></label><input id="r-asset" value="${esc(f.asset||"")}" placeholder="Ex : ETF Monde, Bitcoin, LVMH"></div>
           <div class="field"><label>Combien</label><input id="r-amount" inputmode="decimal" value="${esc(f.amount)}" placeholder="150"></div>
           <div class="field"><label>Devise</label><select id="r-cur"><option value="EUR" ${f.cur!=="USD"?"selected":""}>€ Euro</option><option value="USD" ${f.cur==="USD"?"selected":""}>$ Dollar</option></select></div>
-          <div class="field"><label>Jour du mois <span class="mut" style="font-weight:400">(1 à 28)</span></label><input id="r-day" inputmode="numeric" value="${esc(f.day||5)}" placeholder="5"></div>
+          <div class="field"><label>Fréquence</label><select id="r-freq">
+            <option value="1" ${fN===1?"selected":""}>Chaque mois</option>
+            <option value="3" ${fN===3?"selected":""}>Tous les 3 mois</option>
+            <option value="6" ${fN===6?"selected":""}>Tous les 6 mois</option>
+            <option value="12" ${fN===12?"selected":""}>Chaque année</option>
+            <option value="0" ${fN===0?"selected":""}>Une seule fois</option>
+          </select></div>
         </div>
-        <div class="field"><label>Note <span class="mut" style="font-weight:400">(facultatif)</span></label><input id="r-note" value="${esc(f.note||"")}" placeholder="Ex : sur le PEA, versement du mois"></div>
+        <div class="frow c4">
+          <div class="field"><label>Date <span class="mut" style="font-weight:400">(1re échéance ; pour « chaque mois », seul le jour compte)</span></label><input id="r-date" type="date" value="${esc(fDate)}"></div>
+          <div class="field" style="grid-column:span 3"><label>Note <span class="mut" style="font-weight:400">(facultatif)</span></label><input id="r-note" value="${esc(f.note||"")}" placeholder="Ex : sur le PEA, versement du mois"></div>
+        </div>
         <div style="display:flex;gap:8px"><button class="btn small" onclick="App.saveRem()">${ed?"Enregistrer":"Ajouter le rappel"}</button>${ed?`<button class="btn small ghost" onclick="App.cancelRem()">Annuler</button>`:""}</div>
       </div>
       ${rem.length?this.remCalendar():""}
-      ${rem.length?`<div class="mut" style="text-align:center;margin:2px 0 12px">Total prévu par mois : <b style="color:var(--ink)">${eurF.format(monthTotal)}</b> si tu fais tous tes achats.</div>`:""}
+      ${rem.length?`<div class="mut" style="text-align:center;margin:2px 0 12px">Total prévu ce mois-ci : <b style="color:var(--ink)">${eurF.format(monthTotal)}</b> si tu fais tous tes achats.</div>`:""}
       <div class="remlist">${items}</div>
       <div class="mut" style="text-align:center;margin-top:10px">Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.</div>`;
   },
