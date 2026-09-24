@@ -29,15 +29,18 @@ async function cours(url){
     if(qp.market){
       if(MKT.d && Date.now()-MKT.t < 45000) return done(MKT.d);
       const get=async u=>{ try{ const r=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json"}}); return r.ok?await r.json():null; }catch(_){ return null; } };
-      const [fng,prices,glob,trending,cnn]=await Promise.all([
+      const getCnn=async()=>{ try{ const r=await fetch("https://production.dataviz.cnn.com/index/fearandgreed/graphdata",{headers:{"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36","Accept":"application/json, text/plain, */*","Accept-Language":"en-US,en;q=0.9","Referer":"https://edition.cnn.com/markets/fear-and-greed"}}); return r.ok?await r.json():null; }catch(_){ return null; } };
+      const [fng,prices,glob,trending,cnn,vixq]=await Promise.all([
         get("https://api.alternative.me/fng/?limit=1"),
         get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd,eur&include_24hr_change=true"),
         get("https://api.coingecko.com/api/v3/global"),
         get("https://api.coingecko.com/api/v3/search/trending"),
-        get("https://production.dataviz.cnn.com/index/fearandgreed/graphdata")
+        getCnn(),
+        chart("^VIX","1d").catch(()=>null)
       ]);
       let stockFng=null; if(cnn&&cnn.fear_and_greed){ stockFng={score:cnn.fear_and_greed.score, rating:cnn.fear_and_greed.rating}; }
-      const data={fng,prices,global:glob,trending,stockFng};
+      let vix=(vixq&&vixq.price>0)?{price:vixq.price, prevClose:vixq.prevClose}:null;
+      const data={fng,prices,global:glob,trending,stockFng,vix};
       MKT={t:Date.now(),d:data};
       return done(data);
     }

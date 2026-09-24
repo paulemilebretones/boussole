@@ -309,7 +309,9 @@ Object.assign(I18N, {
   "À faire":"To do", "À venir":"Upcoming", "✓ Fait ce mois-ci":"✓ Done this month", "✓ Fait":"✓ Done", "Voir":"See",
   "Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.":"Reminders show when you open the app. A web app cannot send a notification while closed on iPhone.",
   "Fear & Greed (actions US)":"Fear & Greed (US stocks)", "Indice CNN (marché actions), informatif.":"CNN index (stock market), for information.",
-  "Les jours avec une pastille ont un rappel d'achat.":"Days with a dot have a buy reminder."
+  "Les jours avec une pastille ont un rappel d'achat.":"Days with a dot have a buy reminder.",
+  "VIX (indice de la peur, actions US)":"VIX (fear index, US stocks)", "Marché calme":"Calm market", "Volatilité modérée":"Moderate volatility", "Nervosité":"Nervous", "Forte peur":"Strong fear",
+  "Le VIX mesure la volatilité attendue du S&P 500 : bas = calme, haut = peur. Informatif.":"The VIX measures expected S&P 500 volatility: low = calm, high = fear. For information."
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -954,6 +956,7 @@ const Market={
       if(this.view==="bourse"){
         try{ const m=await this.cfetch(RELAIS+"?market=1",45000); const sf=m&&m.stockFng, sc=sf&&sf.score;
           if(sc!=null){ const v=Math.round(sc); head=`<div class="mcard"><div class="mlab">Fear &amp; Greed (actions US)</div><div class="fngval">${v}<span class="fngmax">/100</span></div><div class="fngtrack"><div class="fngmark" style="left:${v}%"></div></div><div style="font-weight:700">${this.fngLabel(v)}</div><div class="mut" style="font-size:11px;margin-top:6px">Indice CNN (marché actions), informatif.</div></div>`; }
+          else if(m&&m.vix&&m.vix.price>0){ const vx=m.vix.price, lab=vx<14?"Marché calme":(vx<20?"Volatilité modérée":(vx<28?"Nervosité":"Forte peur")); head=`<div class="mcard"><div class="mlab">VIX (indice de la peur, actions US)</div><div class="mprice">${vx.toFixed(1)}</div><div class="${vx<20?'up':'down'}" style="font-weight:700;margin-top:2px">${lab}</div><div class="mut" style="font-size:11px;margin-top:6px">Le VIX mesure la volatilité attendue du S&amp;P 500 : bas = calme, haut = peur. Informatif.</div></div>`; }
         }catch(_){}
       }
       const cards=list.map(([sym,name])=>{ const d=q[sym];
