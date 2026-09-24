@@ -311,7 +311,10 @@ Object.assign(I18N, {
   "Fear & Greed (actions US)":"Fear & Greed (US stocks)", "Indice CNN (marché actions), informatif.":"CNN index (stock market), for information.",
   "Les jours avec une pastille ont un rappel d'achat.":"Days with a dot have a buy reminder.",
   "VIX (indice de la peur, actions US)":"VIX (fear index, US stocks)", "Marché calme":"Calm market", "Volatilité modérée":"Moderate volatility", "Nervosité":"Nervous", "Forte peur":"Strong fear",
-  "Le VIX mesure la volatilité attendue du S&P 500 : bas = calme, haut = peur. Informatif.":"The VIX measures expected S&P 500 volatility: low = calm, high = fear. For information."
+  "Le VIX mesure la volatilité attendue du S&P 500 : bas = calme, haut = peur. Informatif.":"The VIX measures expected S&P 500 volatility: low = calm, high = fear. For information.",
+  "Notifications":"Notifications", "Reçois une notification le matin des jours où un achat est prévu (d'après tes rappels).":"Get a notification in the morning on days a buy is planned (from your reminders).",
+  "Activer les notifications":"Enable notifications", "Activées sur cet appareil :":"Enabled on this device:",
+  "Sur iPhone : ajoute d'abord Boussole à ton écran d'accueil et ouvre-la depuis l'icône, sinon iOS bloque les notifications.":"On iPhone: first add Boussole to your home screen and open it from the icon, otherwise iOS blocks notifications."
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -456,9 +459,33 @@ function lineChart(points, up){
 const COINS={btc:"bitcoin",xbt:"bitcoin",eth:"ethereum",sol:"solana",ada:"cardano",xrp:"ripple",bnb:"binancecoin",doge:"dogecoin",dot:"polkadot",matic:"matic-network",pol:"matic-network",ltc:"litecoin",link:"chainlink",avax:"avalanche-2",atom:"cosmos",uni:"uniswap",trx:"tron",xlm:"stellar",algo:"algorand",xmr:"monero",bch:"bitcoin-cash",near:"near",apt:"aptos",arb:"arbitrum",op:"optimism",sui:"sui",shib:"shiba-inu",pepe:"pepe",ton:"the-open-network"};
 function coinId(p){ const t=(p.ticker||"").toLowerCase().trim(), n=(p.name||"").toLowerCase().trim(); return COINS[t]||COINS[n]||null; }
 
+const VAPID_PUBLIC="BPcPxhJ5Khfano9D33CrjKez4rGnMG-xLQHt6wwJnFN2p4Lx0wj3lXpcdnGhzP67Sh4UbTIRN-UdbVt4pavlmQs";
+function b64urlToU8(s){ const pad="=".repeat((4-s.length%4)%4); const b=(s+pad).replace(/-/g,"+").replace(/_/g,"/"); const raw=atob(b); const u=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) u[i]=raw.charCodeAt(i); return u; }
+const Push = {
+  supported(){ return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); },
+  standalone(){ return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone===true; },
+  async register(){ if(!("serviceWorker" in navigator)) return null; try{ return await navigator.serviceWorker.register("/sw.js"); }catch(e){ return null; } },
+  async enable(){
+    if(!this.supported()){ alert("Ton navigateur ne gère pas les notifications ici. Sur iPhone : ajoute d'abord Boussole à l'écran d'accueil (Partager puis « Sur l'écran d'accueil »), rouvre-la depuis l'icône, puis réessaie."); return; }
+    try{
+      const reg = await this.register(); if(!reg){ alert("Impossible d'installer le service de notifications."); return; }
+      const perm = await Notification.requestPermission();
+      if(perm!=="granted"){ alert("Notifications refusées. Tu peux les réautoriser dans les réglages de ton téléphone (Réglages > Notifications > Boussole)."); return; }
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64urlToU8(VAPID_PUBLIC) });
+      App.S.pushSub = sub.toJSON();
+      App.save(); App.renderProfil();
+      alert("Notifications activées sur cet appareil. Tu recevras un rappel le matin des jours où un achat est prévu.");
+    }catch(e){ alert("Activation impossible : "+((e&&e.message)||e)+"\n\nSur iPhone, l'appli doit être ouverte depuis son icône sur l'écran d'accueil (pas dans Safari)."); }
+  },
+  async disable(){
+    try{ if("serviceWorker" in navigator){ const reg=await navigator.serviceWorker.getRegistration(); if(reg){ const sub=await reg.pushManager.getSubscription(); if(sub) await sub.unsubscribe(); } } }catch(e){}
+    App.S.pushSub=null; App.save(); App.renderProfil();
+    alert("Notifications désactivées.");
+  }
+};
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, snapshots:[], tdKey:"", reminders:[]}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, snapshots:[], tdKey:"", reminders:[], pushSub:null}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -467,11 +494,12 @@ const App = {
     ensureProfile(this.userId, this.meta.pseudo, this.meta.phone);
     $("auth").style.display="none"; $("app").style.display="block";
     await this.load(); applyRate(this.S.rate); this.go("portfolio"); this.refreshRate(); this.save();
+    try{ if(typeof Push!=="undefined" && Push.supported()) Push.register(); }catch(_){}
   },
   async load(){
     try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
       const row = data && data[0];
-      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; } }catch(e){}
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -485,7 +513,7 @@ const App = {
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
-      const payload={positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, savedAt:Date.now()};
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -540,6 +568,13 @@ const App = {
       ${Lock.exists()
         ? `<div style="margin-bottom:12px">Actif : <b style="color:var(--gain)">${Lock.get().type==="faceid"?"Face ID / Touch ID":"code"}</b></div><button class="btn small ghost" onclick="App.disableLock()">Désactiver</button>`
         : `<div class="secrow">${Lock.bioAvailable()?`<button class="btn small" onclick="App.enableBio()">Activer Face ID / Touch ID</button>`:""}<button class="btn small ghost" onclick="App.enableCode()">Définir un code</button></div>${Lock.bioAvailable()?"":`<div class="mut" style="margin-top:8px;font-size:11.5px">Face ID apparaitra une fois l'appli en ligne (HTTPS).</div>`}`}
+    </div>
+    <div class="card" style="max-width:520px; margin-top:14px">
+      <div class="mlab" style="margin-bottom:6px">Notifications</div>
+      <div class="mut" style="margin-bottom:12px">Reçois une notification le matin des jours où un achat est prévu (d'après tes rappels).</div>
+      ${this.S.pushSub
+        ? `<div style="margin-bottom:12px">Activées sur cet appareil : <b style="color:var(--gain)">✓</b></div><button class="btn small ghost" onclick="Push.disable()">Désactiver</button>`
+        : `<button class="btn small" onclick="Push.enable()">Activer les notifications</button><div class="mut" style="margin-top:10px;font-size:11.5px">Sur iPhone : ajoute d'abord Boussole à ton écran d'accueil et ouvre-la depuis l'icône, sinon iOS bloque les notifications.</div>`}
     </div>
     <div class="card" style="max-width:520px; margin-top:14px">
       <div class="mlab" style="margin-bottom:10px">Mes données</div>
