@@ -67,6 +67,72 @@ async function cours(url){
   }catch(e){ return done({ error:String(e) }, 502); }
 }
 
+// ===== Notifications push (rappels d'achat), envoyees chaque matin =====
+// Cle publique VAPID (identique a celle de l'appli, publique par nature).
+const VAPID_PUBLIC = "BPcPxhJ5Khfano9D33CrjKez4rGnMG-xLQHt6wwJnFN2p4Lx0wj3lXpcdnGhzP67Sh4UbTIRN-UdbVt4pavlmQs";
+function _b64url(bytes){ let s=""; const b=new Uint8Array(bytes); for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+function _b64urlToBytes(str){ let s=String(str).replace(/-/g,"+").replace(/_/g,"/"); while(s.length%4) s+="="; const bin=atob(s); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+function _concat(...a){ let len=a.reduce((s,x)=>s+x.length,0); const o=new Uint8Array(len); let off=0; for(const x of a){ o.set(x,off); off+=x.length; } return o; }
+async function _hmac(keyBytes, data){ const k=await crypto.subtle.importKey("raw", keyBytes, {name:"HMAC",hash:"SHA-256"}, false, ["sign"]); return new Uint8Array(await crypto.subtle.sign("HMAC", k, data)); }
+async function _encryptPayload(plaintext, uaPubRaw, authSecret){
+  const enc=new TextEncoder();
+  const asKeys=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"}, true, ["deriveBits"]);
+  const asPubRaw=new Uint8Array(await crypto.subtle.exportKey("raw", asKeys.publicKey));
+  const uaPubKey=await crypto.subtle.importKey("raw", uaPubRaw, {name:"ECDH",namedCurve:"P-256"}, false, []);
+  const ecdh=new Uint8Array(await crypto.subtle.deriveBits({name:"ECDH", public: uaPubKey}, asKeys.privateKey, 256));
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const keyInfo=_concat(enc.encode("WebPush: info"), new Uint8Array([0]), uaPubRaw, asPubRaw);
+  const prkKey=await _hmac(authSecret, ecdh);
+  const ikm=(await _hmac(prkKey, _concat(keyInfo, new Uint8Array([1])))).slice(0,32);
+  const prk=await _hmac(salt, ikm);
+  const cek=(await _hmac(prk, _concat(enc.encode("Content-Encoding: aes128gcm"), new Uint8Array([0,1])))).slice(0,16);
+  const nonce=(await _hmac(prk, _concat(enc.encode("Content-Encoding: nonce"), new Uint8Array([0,1])))).slice(0,12);
+  const cekKey=await crypto.subtle.importKey("raw", cek, {name:"AES-GCM"}, false, ["encrypt"]);
+  const rec=_concat(enc.encode(plaintext), new Uint8Array([2]));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM", iv:nonce, tagLength:128}, cekKey, rec));
+  return _concat(salt, new Uint8Array([0,0,0x10,0]), new Uint8Array([asPubRaw.length]), asPubRaw, ct);
+}
+async function _vapidHeader(endpoint, vapidPrivJWK, subject){
+  const aud=new URL(endpoint).origin;
+  const j=o=>_b64url(new TextEncoder().encode(JSON.stringify(o)));
+  const now=Math.floor(Date.now()/1000);
+  const signingInput=j({typ:"JWT",alg:"ES256"})+"."+j({aud, exp: now+43200, sub: subject});
+  const key=await crypto.subtle.importKey("jwk", vapidPrivJWK, {name:"ECDSA",namedCurve:"P-256"}, false, ["sign"]);
+  const sig=new Uint8Array(await crypto.subtle.sign({name:"ECDSA",hash:"SHA-256"}, key, new TextEncoder().encode(signingInput)));
+  return "vapid t="+signingInput+"."+_b64url(sig)+", k="+VAPID_PUBLIC;
+}
+async function _sendPush(sub, payloadStr, vapidPrivJWK, subject){
+  const body=await _encryptPayload(payloadStr, _b64urlToBytes(sub.keys.p256dh), _b64urlToBytes(sub.keys.auth));
+  const auth=await _vapidHeader(sub.endpoint, vapidPrivJWK, subject);
+  const res=await fetch(sub.endpoint, { method:"POST", headers:{ "Authorization":auth, "Content-Encoding":"aes128gcm", "Content-Type":"application/octet-stream", "TTL":"86400", "Urgency":"normal" }, body });
+  return res.status;
+}
+async function runDailyReminders(env){
+  const SUPA=env.SUPABASE_URL || "https://smmaxgjxsisoxqlpoopi.supabase.co";
+  const KEY=env.SUPABASE_SERVICE_KEY;
+  const VAPID_PRIV=env.VAPID_PRIVATE ? JSON.parse(env.VAPID_PRIVATE) : null;
+  const SUBJECT=env.VAPID_SUBJECT || "mailto:boussole@boussole.app";
+  if(!KEY || !VAPID_PRIV) return;
+  const now=new Date(), Y=now.getUTCFullYear(), M=now.getUTCMonth(), D=now.getUTCDate();
+  const remN=r=> r.everyN==null?1:+r.everyN;
+  const remAnchor=r=>{ if(r.date){ const p=String(r.date).split("-").map(Number); return {y:p[0],m:(p[1]||1)-1,d:Math.min(28,Math.max(1,p[2]||1))}; } return {y:1970,m:0,d:Math.min(28,Math.max(1,+r.day||1))}; };
+  const occDay=(r,y,m)=>{ const a=remAnchor(r),N=remN(r); if(N===0) return (a.y===y&&a.m===m)?a.d:0; const diff=(y-a.y)*12+(m-a.m); if(diff<0||diff%N!==0) return 0; return a.d; };
+  const periodKey=(r,y,m)=> remN(r)===0?"once":(y+"-"+String(m+1).padStart(2,"0"));
+  let rows=[];
+  try{ const r=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data", {headers:{apikey:KEY, Authorization:"Bearer "+KEY}}); if(r.ok) rows=await r.json(); else return; }catch(_){ return; }
+  for(const row of rows){
+    const data=row&&row.data; if(!data) continue;
+    const sub=data.pushSub; if(!sub||!sub.endpoint||!sub.keys) continue;
+    const rems=Array.isArray(data.reminders)?data.reminders:[];
+    const due=rems.filter(r=> occDay(r,Y,M)===D && !(r.lastDone && r.lastDone===periodKey(r,Y,M)));
+    if(!due.length) continue;
+    const noms=due.map(r=> r.asset+" ("+(Math.round((+r.amount||0)*100)/100)+(r.cur==="USD"?" $":" EUR")+")").join(", ");
+    const body=due.length===1 ? ("Aujourd'hui : acheter "+noms) : ("Aujourd'hui : "+due.length+" achats prevus - "+noms);
+    const payload=JSON.stringify({title:"Boussole - rappel d'achat", body, url:"/"});
+    try{ await _sendPush(sub, payload, VAPID_PRIV, SUBJECT); }catch(_){}
+  }
+}
+
 export default {
   async fetch(request, env){
     const url = new URL(request.url);
@@ -74,6 +140,14 @@ export default {
       if(request.method === "OPTIONS") return new Response("ok", { headers: CORS });
       return cours(url);
     }
+    // Declencheur manuel de test (protege par un jeton) : /api/push-test?k=<VAPID_SUBJECT ou secret>
+    if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
+      await runDailyReminders(env);
+      return new Response(JSON.stringify({ran:true}), {headers:CORS});
+    }
     return env.ASSETS.fetch(request);
+  },
+  async scheduled(event, env, ctx){
+    ctx.waitUntil(runDailyReminders(env));
   }
 };

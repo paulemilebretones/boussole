@@ -7,3 +7,7 @@ main = "worker.js"
 [assets]
 directory = "."
 binding = "ASSETS"
+
+# Tache quotidienne : envoie les rappels d'achat par notification a 7h UTC (~9h Paris).
+[triggers]
+crons = ["0 7 * * *"]
