@@ -22,10 +22,44 @@ async function chart(symbol, range){
     range, points };
 }
 
+const UA_FULL = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+let CRUMB = { t:0, cookie:"", crumb:"" };
+async function yahooAuth(){
+  if(CRUMB.crumb && Date.now()-CRUMB.t < 20*60*1000) return CRUMB;
+  const c = await fetch("https://fc.yahoo.com/", { headers:{ "User-Agent":UA_FULL, "Accept":"text/html" } });
+  let cookies = c.headers.getSetCookie ? c.headers.getSetCookie() : [c.headers.get("set-cookie")||""];
+  const cookie = cookies.map(s=>String(s).split(";")[0]).filter(Boolean).join("; ");
+  const cr = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", { headers:{ "User-Agent":UA_FULL, "Accept":"text/plain", "Cookie":cookie } });
+  const crumb = (await cr.text()).trim();
+  CRUMB = { t:Date.now(), cookie, crumb };
+  return CRUMB;
+}
+async function stats(symbol){
+  const a = await yahooAuth();
+  const mods = "financialData,recommendationTrend,summaryDetail,defaultKeyStatistics,price";
+  const u = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${mods}&crumb=${encodeURIComponent(a.crumb)}`;
+  const r = await fetch(u, { headers:{ "User-Agent":UA_FULL, "Accept":"application/json", "Cookie":a.cookie } });
+  if(!r.ok) return { error:"quoteSummary "+r.status, crumbLen:(a.crumb||"").length };
+  const d = await r.json();
+  const res = d && d.quoteSummary && d.quoteSummary.result && d.quoteSummary.result[0];
+  if(!res) return { error:"vide" };
+  const num=x=> (x&&typeof x==="object"&&"raw" in x)? x.raw : (typeof x==="number"?x:null);
+  const fd=res.financialData||{}, sd=res.summaryDetail||{}, ks=res.defaultKeyStatistics||{}, pr=res.price||{};
+  const tr=(res.recommendationTrend&&res.recommendationTrend.trend&&res.recommendationTrend.trend[0])||{};
+  return {
+    symbol, currency: pr.currency||fd.financialCurrency||null,
+    reco: fd.recommendationKey||null, recoMean: num(fd.recommendationMean), nAnalysts: num(fd.numberOfAnalystOpinions),
+    target: num(fd.targetMeanPrice), targetHigh: num(fd.targetHighPrice), targetLow: num(fd.targetLowPrice), price: num(fd.currentPrice)||num(pr.regularMarketPrice),
+    trend: { strongBuy:num(tr.strongBuy)||0, buy:num(tr.buy)||0, hold:num(tr.hold)||0, sell:num(tr.sell)||0, strongSell:num(tr.strongSell)||0 },
+    pe: num(sd.trailingPE), marketCap: num(sd.marketCap)||num(pr.marketCap), divYield: num(sd.dividendYield), beta: num(sd.beta)||num(ks.beta),
+    wk52High: num(sd.fiftyTwoWeekHigh), wk52Low: num(sd.fiftyTwoWeekLow)
+  };
+}
 async function cours(url){
   const qp = Object.fromEntries(url.searchParams);
   const done = (o,s=200)=> new Response(JSON.stringify(o), { status:s, headers:CORS });
   try{
+    if(qp.stats){ return done(await stats(qp.stats)); }
     if(qp.market){
       if(MKT.d && Date.now()-MKT.t < 45000) return done(MKT.d);
       const get=async u=>{ try{ const r=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json"}}); return r.ok?await r.json():null; }catch(_){ return null; } };
