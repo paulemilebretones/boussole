@@ -170,6 +170,10 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .chartxt{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
 .chartxt b{color:var(--ink)}
 .chartxt .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.recobar{display:flex;height:11px;border-radius:6px;overflow:hidden;background:var(--surface2)}
+.recobar>div{height:100%}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
+.kstat{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -1136,7 +1140,8 @@ const Market={
   async loadChart(box){
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
     const watched=App.isWatched(this.chartSym), nm=(this.chartName||"").replace(/'/g,"’");
-    box.innerHTML=`<div class="card"><div class="viewhead" style="margin-bottom:10px"><button class="btn small ghost" onclick="Market.back()">← Retour</button><div class="grow"></div><button class="btn small ${watched?"":"ghost"}" onclick="App.toggleWatch('${this.chartSym}','${nm}')">${watched?"★ Suivi":"☆ Suivre"}</button><h3 style="font-size:16px;margin-left:10px">${esc(this.chartName)}</h3></div><div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.chartRange===r[0]?' on':''}" onclick="Market.setRange('${r[0]}')">${r[1]}</button>`).join("")}</div><div id="mchartbox"><div class="mut">Chargement…</div></div></div>`;
+    box.innerHTML=`<div class="card"><div class="viewhead" style="margin-bottom:10px"><button class="btn small ghost" onclick="Market.back()">← Retour</button><div class="grow"></div><button class="btn small ${watched?"":"ghost"}" onclick="App.toggleWatch('${this.chartSym}','${nm}')">${watched?"★ Suivi":"☆ Suivre"}</button><h3 style="font-size:16px;margin-left:10px">${esc(this.chartName)}</h3></div><div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.chartRange===r[0]?' on':''}" onclick="Market.setRange('${r[0]}')">${r[1]}</button>`).join("")}</div><div id="mchartbox"><div class="mut">Chargement…</div></div></div><div id="mstatsbox"></div>`;
+    this.loadStats(this.chartSym);
     try{
       const d=await this.cfetch(RELAIS+"?symbol="+encodeURIComponent(this.chartSym)+"&range="+this.chartRange,45000);
       const bx=$("mchartbox"); if(!bx) return;
@@ -1145,6 +1150,27 @@ const Market={
       const cf=v=> d.currency==="USD"?usdF.format(v):(d.currency==="EUR"?eurF.format(v):(v.toFixed(2)+" "+(d.currency||"")));
       bx.innerHTML=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.chartRange]||this.chartRange}</span></div>${lineChart(d.points, up, d.currency)}`;
     }catch(e){ const bx=$("mchartbox"); if(bx) bx.innerHTML='<div class="mut">Graphique indisponible.</div>'; }
+  },
+  async loadStats(sym){
+    let s; try{ s=await this.cfetch(RELAIS+"?stats="+encodeURIComponent(sym),300000); }catch(e){ return; }
+    const bx=$("mstatsbox"); if(!bx || !s || s.error) return;
+    const cur=s.currency;
+    const fmtC=v=> (v==null)?"?":(cur==="USD"?usdF.format(v):(cur==="EUR"?eurF.format(v):(v.toLocaleString("fr-FR",{maximumFractionDigits:2})+(cur?(" "+cur):""))));
+    const t=s.trend||{}, tot=((t.strongBuy||0)+(t.buy||0)+(t.hold||0)+(t.sell||0)+(t.strongSell||0))||0;
+    let analyst="";
+    if(tot>0 || s.target!=null){
+      const seg=(n,c)=> (tot&&n)? `<div style="width:${(n/tot*100).toFixed(1)}%;background:${c}"></div>`:"";
+      const bar= tot? `<div class="recobar">${seg(t.strongBuy,"#18A886")}${seg(t.buy,"#5FB37A")}${seg(t.hold,"#E0B54F")}${seg(t.sell,"#E0906B")}${seg(t.strongSell,"#F2846B")}</div><div class="mut" style="font-size:11px;margin-top:6px;display:flex;gap:12px;flex-wrap:wrap"><span>Achat fort ${t.strongBuy}</span><span>Achat ${t.buy}</span><span>Conserver ${t.hold}</span><span>Vendre ${t.sell}</span><span>Vente forte ${t.strongSell}</span></div>`:"";
+      const rl= s.recoMean!=null ? (s.recoMean<1.5?"Achat fort":s.recoMean<2.5?"Achat":s.recoMean<3.5?"Conserver":s.recoMean<4.5?"Vendre":"Vente forte") : (s.reco||"");
+      const tgtPc=(s.target!=null && s.price>0)? ((s.target-s.price)/s.price*100):null;
+      analyst=`<div class="mlab" style="margin-bottom:8px">Avis des analystes ${s.nAnalysts?`(${s.nAnalysts})`:""}</div>${bar}${rl?`<div style="margin-top:8px">Consensus : <b style="color:var(--ink)">${rl}</b>${s.recoMean!=null?` <span class="mut">(${s.recoMean.toFixed(1)}/5, 1 = achat)</span>`:""}</div>`:""}${s.target!=null?`<div class="mut" style="margin-top:6px">Objectif de cours moyen : <b style="color:var(--ink)">${fmtC(s.target)}</b>${tgtPc!=null?` <span class="${tgtPc>=0?"up":"down"}">(${tgtPc>=0?"+":""}${tgtPc.toFixed(1)} % vs cours)</span>`:""} <span style="opacity:.7">, fourchette ${fmtC(s.targetLow)} a ${fmtC(s.targetHigh)}</span></div>`:""}`;
+    }
+    const mc= s.marketCap!=null ? ((s.marketCap>=1e12?(s.marketCap/1e12).toLocaleString("fr-FR",{maximumFractionDigits:2})+" T":s.marketCap>=1e9?(s.marketCap/1e9).toLocaleString("fr-FR",{maximumFractionDigits:1})+" Md":(s.marketCap/1e6).toLocaleString("fr-FR",{maximumFractionDigits:0})+" M")+(cur==="USD"?" $":cur==="EUR"?" €":"")):null;
+    const wkPos=(s.wk52Low!=null && s.wk52High!=null && s.wk52High>s.wk52Low && s.price>0)? Math.round((s.price-s.wk52Low)/(s.wk52High-s.wk52Low)*100):null;
+    const stat=(lab,val)=> (val!=null&&val!=="")?`<div class="kstat"><div class="mut" style="font-size:11px">${lab}</div><div style="font-weight:700;margin-top:2px">${val}</div></div>`:"";
+    const grid=`<div class="kgrid">${stat("PER (cours/bénéfice)", s.pe!=null?s.pe.toFixed(1):null)}${stat("Capitalisation", mc)}${stat("Rendement du dividende", s.divYield!=null?(s.divYield*100).toFixed(2)+" %":null)}${stat("Volatilité (beta)", s.beta!=null?s.beta.toFixed(2):null)}${stat("Fourchette 52 semaines", (s.wk52Low!=null&&s.wk52High!=null)?fmtC(s.wk52Low)+" - "+fmtC(s.wk52High):null)}${stat("Position dans la fourchette", wkPos!=null?wkPos+" %":null)}</div>`;
+    if(!analyst && !/kstat/.test(grid)) return;
+    bx.innerHTML=`<div class="card" style="margin-top:12px">${analyst}${grid}<div class="mut" style="font-size:11px;margin-top:12px">Données publiques (Yahoo Finance), à titre informatif. Aucun conseil d'achat ou de vente de notre part.</div></div>`;
   }
 };
 
