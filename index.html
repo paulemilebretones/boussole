@@ -126,6 +126,8 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .searchres .srsym{font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--accent); margin-top:1px}
 .searchres .srx{margin-left:auto; font-size:11px; color:var(--muted); text-align:right; white-space:nowrap}
 .searchres .srhint{padding:11px 13px; color:var(--muted); font-size:12.5px}
+.searchres .srstar{background:none;border:none;color:var(--muted);font-size:19px;cursor:pointer;padding:0 6px;line-height:1;align-self:center}
+.searchres .srstar:hover{color:var(--accent)}
 .lexique{margin:8px 0 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface2)}
 .lexique summary{cursor:pointer; padding:11px 14px; font-weight:700; font-size:13.5px; color:var(--ink); list-style:none}
 .lexique summary::-webkit-details-marker{display:none}
@@ -462,7 +464,9 @@ const ORDER=["action","crypto","etf","or","argent","cuivre","bronze","maison","m
 const METALS={ or:{sym:"GC=F",gpu:31.1034768}, argent:{sym:"SI=F",gpu:31.1034768}, cuivre:{sym:"HG=F",gpu:453.59237} };
 const METALCLS=new Set(["or","argent","cuivre","bronze"]);
 function gramsPerUnit(u){ return ({once:31.1034768, gramme:1, kg:1000, livre:453.59237})[u||"once"]||31.1034768; }
-const ENVS=["PEA","CTO","Assurance-vie","PER","Plateforme crypto","Cold wallet","Livret / cash","Autre"];
+const ENVS=["PEA","PEA-PME","CTO","Assurance-vie","PER","Livret A","LDDS","Plateforme crypto","Cold wallet","Livret / cash","Autre"];
+const PEA_SUFFIX=new Set(["PA","AS","BR","DE","F","MU","SG","HM","HA","DU","BE","STU","MI","MC","LS","VI","HE","ST","CO","OL","IC","IR","AT","PR","WA","BD","RG","TL","VS"]);
+function peaEligibleStock(ysym){ const s=String(ysym||"").trim(); const dot=s.lastIndexOf("."); if(dot<0) return false; return PEA_SUFFIX.has(s.slice(dot+1).toUpperCase()); }
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function setBadge(state){ const el=$("savebadge"); if(!el) return; const m=({pending:["Sauvegarde…","var(--muted)"],ok:["✓ Sauvegardé","var(--gain)"],err:["⚠ non sauvegardé","var(--loss)"]})[state]||["",""]; el.textContent=m[0]; el.style.color=m[1]; }
@@ -722,7 +726,7 @@ const App = {
         <div class="field"><label>Ticker <span class="mut" style="font-weight:400">(code court de la valeur, ex : MC, BTC - facultatif)</span></label><input id="f-ticker" value="${esc(p.ticker||"")}" placeholder="MC, BTC…"></div>
       </div>
       <div class="frow c4">
-        <div class="field"><label>Enveloppe <span class="mut" style="font-weight:400">(type de compte)</span></label><select id="f-env">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select></div>
+        <div class="field"><label>Enveloppe <span class="mut" style="font-weight:400">(type de compte)</span></label><select id="f-env" onchange="App.checkPea()">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select><div id="f-peawarn" style="display:none;font-size:11.5px;color:var(--loss);margin-top:4px"></div></div>
         <div class="field"><label>Quantité</label><input id="f-qty" inputmode="decimal" value="${esc(p.qty)}"></div>
         <div class="field"><label>Prix d'achat <span class="mut" style="font-weight:400">(par unité - une estimation suffit)</span></label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}" placeholder="Ex : ton prix d'achat, même approximatif"></div>
         <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
@@ -751,7 +755,9 @@ const App = {
     const uf=$("unit-field"); if(uf) uf.style.display=isMetal?"":"none";
     box("f-ticker", priced); box("f-ysym", priced); box("f-search", priced); box("f-qty", !isCash); box("f-pru", !isCash);
     const pl=$("f-price"); if(pl&&pl.closest(".field")){ const lab=pl.closest(".field").querySelector("label"); if(lab) lab.textContent = isCash?"Montant (ce que tu as)":"Prix actuel"; }
+    this.checkPea();
   },
+  checkPea(){ const el=$("f-peawarn"); if(!el) return; const cls=($("f-cls")||{}).value, env=($("f-env")||{}).value, ysym=(($("f-ysym")||{}).value||"").trim(); if(cls==="action" && env==="PEA" && ysym && !peaEligibleStock(ysym)){ el.textContent="⚠ Action hors UE : normalement non éligible au PEA (réservé aux actions UE/EEE). Un CTO convient mieux."; el.style.display=""; } else { el.style.display="none"; } },
   searchSym(q){
     q=(q||"").trim(); const rc=$("f-search-res");
     clearTimeout(this._srT);
@@ -774,6 +780,7 @@ const App = {
     const cs=$("f-cls"); if(cs && clsMap[type]){ cs.value=clsMap[type]; this.onClassChange(); }
     if($("f-name")) $("f-name").value=name;
     if($("f-ysym")) $("f-ysym").value=sym;
+    this.checkPea();
     const sb2=$("f-search"); if(sb2) sb2.value=name;
     const rc=$("f-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; }
     // On recupere le prix en direct. IMPORTANT: on ne remplit le prix que s'il est ENCORE VIDE
@@ -799,6 +806,9 @@ const App = {
     const name=g("f-name").trim(); if(!name){ alert("Donne un nom a la position."); return; }
     const cls=g("f-cls"), price=num(g("f-price"));
     const data={cls,cur:g("f-cur")==="USD"?"USD":"EUR",name,ticker:g("f-ticker").trim(),ysym:g("f-ysym").trim(),unit:($("f-unit")?g("f-unit"):"once"),env:g("f-env"),qty:cls==="cash"?1:num(g("f-qty")),pru:cls==="cash"?price:num(g("f-pru")),price};
+    if(cls==="action" && data.env==="PEA" && data.ysym && !peaEligibleStock(data.ysym)){
+      if(!confirm("Cette action semble hors Union européenne : normalement elle n'est PAS éligible au PEA (réservé aux actions de l'UE/EEE). Un compte-titres (CTO) convient. L'ajouter quand même en PEA ?")) return;
+    }
     if(this.FORM==="new") this.S.positions.push({id:uid(),...data});
     else { const p=this.S.positions.find(x=>x.id===this.FORM); if(p) Object.assign(p,data); }
     this.FORM=null; this._new=null; this.save(); this.render();
@@ -1083,11 +1093,12 @@ const Market={
         if(!res.length){ rc2.className="searchres on"; rc2.innerHTML='<div class="srhint">Aucun résultat.</div>'; return; }
         const tlab={EQUITY:"Action",ETF:"ETF",CRYPTOCURRENCY:"Crypto",MUTUALFUND:"Fonds",INDEX:"Indice",CURRENCY:"Devise"};
         rc2.className="searchres on";
-        rc2.innerHTML=res.map((x,i)=>`<div class="sr" onclick="Market.pickSymIdx(${i})"><div><div class="srname">${esc(x.name)}</div><div class="srsym">${esc(x.symbol)}</div></div><span class="srx">${tlab[x.type]||esc(x.type)}<br>${esc(x.exch||"")}</span></div>`).join("");
+        rc2.innerHTML=res.map((x,i)=>`<div class="sr" onclick="Market.pickSymIdx(${i})"><div style="flex:1"><div class="srname">${esc(x.name)}</div><div class="srsym">${esc(x.symbol)}</div></div><button id="m-star-${i}" class="srstar" title="Suivre / ne plus suivre" style="color:${App.isWatched(x.symbol)?"var(--accent)":""}" onclick="event.stopPropagation();Market.watchIdx(${i})">${App.isWatched(x.symbol)?"★":"☆"}</button><span class="srx">${tlab[x.type]||esc(x.type)}<br>${esc(x.exch||"")}</span></div>`).join("");
       }catch(e){ const rc3=$("m-search-res"); if(rc3){ rc3.className="searchres on"; rc3.innerHTML='<div class="srhint">Recherche indisponible un instant. Réessaie.</div>'; } }
     },300);
   },
   pickSymIdx(i){ const x=this._searchRes&&this._searchRes[i]; if(!x) return; const rc=$("m-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; } const si=$("m-search"); if(si) si.value=x.name; this.openChart(x.symbol, x.name); },
+  watchIdx(i){ const x=this._searchRes&&this._searchRes[i]; if(!x) return; App.toggleWatch(x.symbol, x.name); const b=document.getElementById("m-star-"+i); if(b){ const w=App.isWatched(x.symbol); b.textContent=w?"★":"☆"; b.style.color=w?"var(--accent)":""; } },
   async loadCrypto(box){
     try{
       const m=await this.cfetch(RELAIS+"?market=1",45000);
