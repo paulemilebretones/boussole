@@ -1065,12 +1065,13 @@ const Market={
     const box=$("marche"); if(!box) return;
     if(force) this.cache={};
     box.innerHTML=`<div class="mut">Chargement…</div>`;
-    if(this.chartSym) return this.loadChart(box);
-    if(this.view==="crypto") return this.loadCrypto(box);
-    if(this.view==="suivi") return this.loadSuivi(box);
-    return this.loadList(box);
+    const tok = ++this._loadSeq || (this._loadSeq=1);
+    if(this.chartSym) return this.loadChart(box, tok);
+    if(this.view==="crypto") return this.loadCrypto(box, tok);
+    if(this.view==="suivi") return this.loadSuivi(box, tok);
+    return this.loadList(box, tok);
   },
-  async loadSuivi(box){
+  async loadSuivi(box, tok){
     const w=App.S.watch||[];
     const help=`<div class="mut" style="text-align:center;margin-top:14px">Ajoute des valeurs avec la recherche en haut : ouvre-en une et clique <b>☆ Suivre</b>.</div>`;
     if(!w.length){ box.innerHTML=`<div class="mcard"><div class="mlab">Aucune valeur suivie</div><div class="mut" style="font-size:12.5px;margin-top:6px">Cherche une action, un ETF ou une crypto dans la barre en haut, ouvre son graphique, puis clique <b>☆ Suivre</b>. Elles apparaitront ici.</div></div>${help}`; return; }
@@ -1082,8 +1083,9 @@ const Market={
         const price=(d&&d.price>0)?(d.currency==="EUR"?eurF.format(d.price):(d.currency==="USD"?usdF.format(d.price):d.price.toLocaleString("fr-FR",{maximumFractionDigits:4})+" "+(d.currency||""))):"indisponible";
         const ch=(d&&d.prevClose)?((d.price-d.prevClose)/d.prevClose*100):0, up=ch>=0;
         return `<div class="mcard" style="cursor:pointer;position:relative" onclick="Market.openChart('${sym}','${nm}')"><div class="mlab">${esc(name||sym)} <span class="pill">${esc(sym)}</span></div><div class="mprice">${price}</div>${d&&d.price>0?`<div class="${up?'up':'down'}" style="font-weight:700;margin-top:4px">${up?'+':''}${ch.toFixed(2)} % <span class="mut" style="font-size:11px;font-weight:400">(jour)</span></div>`:""}<button class="rowbtn" title="Retirer du suivi" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation();App.toggleWatch('${sym}','')">✕</button></div>`; }).join("");
+      if(tok && tok!==this._loadSeq) return;
       box.innerHTML=`<div class="mgrid">${cards}</div>${help}`;
-    }catch(e){ box.innerHTML=`<div class="mcard">Indisponible a l'instant, réessaie.</div>`; }
+    }catch(e){ if(tok && tok!==this._loadSeq) return; box.innerHTML=`<div class="mcard">Indisponible a l'instant, réessaie.</div>`; }
   },
   searchSym(q){
     q=(q||"").trim(); const rc=$("m-search-res");
@@ -1103,7 +1105,7 @@ const Market={
   },
   pickSymIdx(i){ const x=this._searchRes&&this._searchRes[i]; if(!x) return; const rc=$("m-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; } const si=$("m-search"); if(si) si.value=x.name; this.openChart(x.symbol, x.name); },
   watchIdx(i){ const x=this._searchRes&&this._searchRes[i]; if(!x) return; App.toggleWatch(x.symbol, x.name); const b=document.getElementById("m-star-"+i); if(b){ const w=App.isWatched(x.symbol); b.textContent=w?"★":"☆"; b.style.color=w?"var(--accent)":""; } },
-  async loadCrypto(box){
+  async loadCrypto(box, tok){
     try{
       const m=await this.cfetch(RELAIS+"?market=1",45000);
       const fng=m&&m.fng, fd=fng&&fng.data&&fng.data[0];
@@ -1114,10 +1116,11 @@ const Market={
       html+=coin("Bitcoin","BTC",px&&px.bitcoin,"BTC-USD")+coin("Ethereum","ETH",px&&px.ethereum,"ETH-USD");
       if(gl&&gl.data){ const mc=gl.data.market_cap_change_percentage_24h_usd||0, dom=(gl.data.market_cap_percentage&&gl.data.market_cap_percentage.btc)||0, up=mc>=0; html+=`<div class="mcard"><div class="mlab">Marché crypto global</div><div class="${up?'up':'down'}" style="font-weight:700;font-size:18px">${up?'+':''}${mc.toFixed(2)} % <span class="mut" style="font-size:12px;font-weight:400">(24h, capitalisation)</span></div><div class="mut" style="margin-top:8px">Dominance Bitcoin : <b style="color:var(--ink)">${dom.toFixed(1)} %</b></div></div>`; }
       if(tr&&tr.coins&&tr.coins.length){ const rows=tr.coins.slice(0,7).map((c,i)=>`<div class="trow"><span class="rank">${i+1}</span><span>${esc(c.item.name)}</span><span class="mut">${esc(c.item.symbol)}</span></div>`).join(""); html+=`<div class="mcard"><div class="mlab">Cryptos tendance (recherches)</div><div class="tlist">${rows}</div></div>`; }
+      if(tok && tok!==this._loadSeq) return;
       box.innerHTML=`<div class="mgrid">${html}</div><div class="mut" style="text-align:center;margin-top:14px">Indicateurs publics à titre informatif. Aucun conseil d'achat ou de vente.</div>`;
-    }catch(e){ box.innerHTML=`<div class="mcard">Indicateurs momentanément indisponibles. Réessaie dans une minute.</div>`; }
+    }catch(e){ if(tok && tok!==this._loadSeq) return; box.innerHTML=`<div class="mcard">Indicateurs momentanément indisponibles. Réessaie dans une minute.</div>`; }
   },
-  async loadList(box){
+  async loadList(box, tok){
     const list=this.view==="bourse"?this.BOURSE:this.MATIERES;
     try{
       const j=await this.cfetch(RELAIS+"?symbols="+encodeURIComponent(list.map(x=>x[0]).join(",")),60000);
@@ -1134,10 +1137,11 @@ const Market={
         const ch=d.prevClose?((d.price-d.prevClose)/d.prevClose*100):0, up=ch>=0;
         const cf=d.currency==="EUR"?eurF.format(d.price):(d.currency==="USD"?usdF.format(d.price):d.price.toLocaleString("fr-FR",{maximumFractionDigits:4})+" "+(d.currency||""));
         return `<div class="mcard" style="cursor:pointer" onclick="Market.openChart('${sym}','${name}')"><div class="mlab">${name}</div><div class="mprice">${cf}</div><div class="${up?'up':'down'}" style="font-weight:700;margin-top:4px">${up?'+':''}${ch.toFixed(2)} % <span class="mut" style="font-size:11px;font-weight:400">(jour)</span></div></div>`; }).join("");
+      if(tok && tok!==this._loadSeq) return;
       box.innerHTML=`<div class="mgrid">${head}${cards}</div><div class="mut" style="text-align:center;margin-top:14px">Clique un marché pour son graphique. Données informatives, aucun conseil.</div>`;
-    }catch(e){ box.innerHTML=`<div class="mcard">Marchés indisponibles a l'instant, réessaie.</div>`; }
+    }catch(e){ if(tok && tok!==this._loadSeq) return; box.innerHTML=`<div class="mcard">Marchés indisponibles a l'instant, réessaie.</div>`; }
   },
-  async loadChart(box){
+  async loadChart(box, tok){
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
     const watched=App.isWatched(this.chartSym), nm=(this.chartName||"").replace(/'/g,"’");
     box.innerHTML=`<div class="card"><div class="viewhead" style="margin-bottom:10px"><button class="btn small ghost" onclick="Market.back()">← Retour</button><div class="grow"></div><button class="btn small ${watched?"":"ghost"}" onclick="App.toggleWatch('${this.chartSym}','${nm}')">${watched?"★ Suivi":"☆ Suivre"}</button><h3 style="font-size:16px;margin-left:10px">${esc(this.chartName)}</h3></div><div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.chartRange===r[0]?' on':''}" onclick="Market.setRange('${r[0]}')">${r[1]}</button>`).join("")}</div><div id="mchartbox"><div class="mut">Chargement…</div></div></div><div id="mstatsbox"></div>`;
