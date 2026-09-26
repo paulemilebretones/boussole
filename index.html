@@ -328,7 +328,8 @@ Object.assign(I18N, {
   "Fréquence":"Frequency", "Chaque mois":"Every month", "Tous les 3 mois":"Every 3 months", "Tous les 6 mois":"Every 6 months", "Chaque année":"Every year", "Une seule fois":"Once",
   "Date":"Date", "(1re échéance ; pour « chaque mois », seul le jour compte)":"(first date; for \"every month\", only the day matters)", "Programmé":"Scheduled",
   "Rechercher la valeur":"Search the asset", "(en argent, pas en nombre d'actions)":"(in money, not number of shares)", "(facultatif, pour estimer combien d'unités)":"(optional, to estimate how many units)",
-  "Ligne":"Line", "↺ tout réafficher":"↺ show all"
+  "Ligne":"Line", "↺ tout réafficher":"↺ show all",
+  "Suivi":"Watchlist", "☆ Suivre":"☆ Follow", "★ Suivi":"★ Followed", "Aucune valeur suivie":"No followed asset"
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -502,7 +503,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[]}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -516,7 +517,7 @@ const App = {
   async load(){
     try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
       const row = data && data[0];
-      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; } }catch(e){}
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -530,7 +531,7 @@ const App = {
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], savedAt:Date.now()};
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -567,6 +568,8 @@ const App = {
   },
   setPieBy(by){ this.pieBy=by; this.pieOff={}; this.render(); },
   togglePieIdx(i){ const g=this._pieGroups&&this._pieGroups[i]; if(!g) return; this.pieOff=this.pieOff||{}; this.pieOff[g.key]=!this.pieOff[g.key]; this.render(); },
+  isWatched(sym){ return (this.S.watch||[]).some(w=>w.sym===sym); },
+  toggleWatch(sym,name){ if(!sym) return; this.S.watch=this.S.watch||[]; const i=this.S.watch.findIndex(w=>w.sym===sym); if(i>=0) this.S.watch.splice(i,1); else this.S.watch.push({sym,name:name||sym}); this.save(); if(this.tab==="marche"&&typeof Market!=="undefined") Market.load(); },
   pieBlock(){
     const by=this.pieBy||"cls", off=this.pieOff||{};
     const groups=this.pieGroups(); this._pieGroups=groups;
@@ -590,7 +593,7 @@ const App = {
     this.renderPortfolio();
   },
   renderMarche(){
-    const mt=[["crypto","Crypto"],["bourse","Bourse"],["matieres","Matières"]];
+    const mt=[["crypto","Crypto"],["bourse","Bourse"],["matieres","Matières"],["suivi","Suivi"]];
     $("view").innerHTML=`<div class="viewhead"><h2>Marché</h2><div class="grow"></div><button class="btn small ghost" onclick="Market.load(true)">↻ Actualiser</button></div>
       <div class="field searchbox" style="margin-bottom:12px"><label>Rechercher un marché <span class="mut" style="font-weight:400">(action, ETF ou crypto - ex : Tesla, Nvidia, Amundi, Bitcoin)</span></label><input id="m-search" autocomplete="off" placeholder="Tape un nom et choisis pour voir le cours et le graphique" oninput="Market.searchSym(this.value)"><div id="m-search-res" class="searchres"></div></div>
       <div class="apptabs" style="max-width:none">${mt.map(t=>`<button aria-selected="${Market.view===t[0]}" onclick="Market.setView('${t[0]}')">${t[1]}</button>`).join("")}</div>
@@ -1028,7 +1031,23 @@ const Market={
     box.innerHTML=`<div class="mut">Chargement…</div>`;
     if(this.chartSym) return this.loadChart(box);
     if(this.view==="crypto") return this.loadCrypto(box);
+    if(this.view==="suivi") return this.loadSuivi(box);
     return this.loadList(box);
+  },
+  async loadSuivi(box){
+    const w=App.S.watch||[];
+    const help=`<div class="mut" style="text-align:center;margin-top:14px">Ajoute des valeurs avec la recherche en haut : ouvre-en une et clique <b>☆ Suivre</b>.</div>`;
+    if(!w.length){ box.innerHTML=`<div class="mcard"><div class="mlab">Aucune valeur suivie</div><div class="mut" style="font-size:12.5px;margin-top:6px">Cherche une action, un ETF ou une crypto dans la barre en haut, ouvre son graphique, puis clique <b>☆ Suivre</b>. Elles apparaitront ici.</div></div>${help}`; return; }
+    try{
+      const j=await this.cfetch(RELAIS+"?symbols="+encodeURIComponent(w.map(x=>x.sym).join(",")),60000);
+      const q=(j&&j.quotes)||{};
+      const cards=w.map(({sym,name})=>{ const d=q[sym];
+        const nm=(name||sym).replace(/'/g,"’");
+        const price=(d&&d.price>0)?(d.currency==="EUR"?eurF.format(d.price):(d.currency==="USD"?usdF.format(d.price):d.price.toLocaleString("fr-FR",{maximumFractionDigits:4})+" "+(d.currency||""))):"indisponible";
+        const ch=(d&&d.prevClose)?((d.price-d.prevClose)/d.prevClose*100):0, up=ch>=0;
+        return `<div class="mcard" style="cursor:pointer;position:relative" onclick="Market.openChart('${sym}','${nm}')"><div class="mlab">${esc(name||sym)} <span class="pill">${esc(sym)}</span></div><div class="mprice">${price}</div>${d&&d.price>0?`<div class="${up?'up':'down'}" style="font-weight:700;margin-top:4px">${up?'+':''}${ch.toFixed(2)} % <span class="mut" style="font-size:11px;font-weight:400">(jour)</span></div>`:""}<button class="rowbtn" title="Retirer du suivi" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation();App.toggleWatch('${sym}','')">✕</button></div>`; }).join("");
+      box.innerHTML=`<div class="mgrid">${cards}</div>${help}`;
+    }catch(e){ box.innerHTML=`<div class="mcard">Indisponible a l'instant, réessaie.</div>`; }
   },
   searchSym(q){
     q=(q||"").trim(); const rc=$("m-search-res");
@@ -1083,7 +1102,8 @@ const Market={
   },
   async loadChart(box){
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
-    box.innerHTML=`<div class="card"><div class="viewhead" style="margin-bottom:10px"><button class="btn small ghost" onclick="Market.back()">← Retour</button><div class="grow"></div><h3 style="font-size:17px">${esc(this.chartName)}</h3></div><div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.chartRange===r[0]?' on':''}" onclick="Market.setRange('${r[0]}')">${r[1]}</button>`).join("")}</div><div id="mchartbox"><div class="mut">Chargement…</div></div></div>`;
+    const watched=App.isWatched(this.chartSym), nm=(this.chartName||"").replace(/'/g,"’");
+    box.innerHTML=`<div class="card"><div class="viewhead" style="margin-bottom:10px"><button class="btn small ghost" onclick="Market.back()">← Retour</button><div class="grow"></div><button class="btn small ${watched?"":"ghost"}" onclick="App.toggleWatch('${this.chartSym}','${nm}')">${watched?"★ Suivi":"☆ Suivre"}</button><h3 style="font-size:16px;margin-left:10px">${esc(this.chartName)}</h3></div><div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.chartRange===r[0]?' on':''}" onclick="Market.setRange('${r[0]}')">${r[1]}</button>`).join("")}</div><div id="mchartbox"><div class="mut">Chargement…</div></div></div>`;
     try{
       const d=await this.cfetch(RELAIS+"?symbol="+encodeURIComponent(this.chartSym)+"&range="+this.chartRange,45000);
       const bx=$("mchartbox"); if(!bx) return;
