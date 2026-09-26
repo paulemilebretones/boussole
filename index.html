@@ -155,6 +155,9 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .rcal-cell.done{background:rgba(24,168,134,.20);color:var(--gain)}
 .rcal-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent)}
 .rcal-cell.due .rcal-dot,.rcal-cell.done .rcal-dot{display:none}
+.curtog{display:inline-flex;gap:3px;margin-left:8px;vertical-align:middle}
+.curtog .cbtn{background:var(--surface2);border:1px solid var(--line);color:var(--muted);border-radius:6px;min-width:24px;height:22px;font-size:12px;font-weight:800;cursor:pointer;padding:0 2px;line-height:1}
+.curtog .cbtn.on{background:var(--accent);color:#0C1120;border-color:var(--accent)}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -316,7 +319,8 @@ Object.assign(I18N, {
   "Activer les notifications":"Enable notifications", "Activées sur cet appareil :":"Enabled on this device:",
   "Sur iPhone : ajoute d'abord Boussole à ton écran d'accueil et ouvre-la depuis l'icône, sinon iOS bloque les notifications.":"On iPhone: first add Boussole to your home screen and open it from the icon, otherwise iOS blocks notifications.",
   "Fréquence":"Frequency", "Chaque mois":"Every month", "Tous les 3 mois":"Every 3 months", "Tous les 6 mois":"Every 6 months", "Chaque année":"Every year", "Une seule fois":"Once",
-  "Date":"Date", "(1re échéance ; pour « chaque mois », seul le jour compte)":"(first date; for \"every month\", only the day matters)", "Programmé":"Scheduled"
+  "Date":"Date", "(1re échéance ; pour « chaque mois », seul le jour compte)":"(first date; for \"every month\", only the day matters)", "Programmé":"Scheduled",
+  "Rechercher la valeur":"Search the asset", "(en argent, pas en nombre d'actions)":"(in money, not number of shares)", "(facultatif, pour estimer combien d'unités)":"(optional, to estimate how many units)"
 });
 let LANG="fr"; try{ LANG=localStorage.getItem("boussole-lang")||"fr"; }catch(_){}
 let _trBusy=false;
@@ -437,6 +441,9 @@ function traduire(m){
 /* ================= SUIVI (connecté, sauvegarde par compte) ================= */
 const eurF={format:v=>new Intl.NumberFormat(LANG==="en"?"en-IE":"fr-FR",{style:"currency",currency:"EUR"}).format(v)};
 const usdF={format:v=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(v)};
+const gbpF={format:v=>new Intl.NumberFormat(LANG==="en"?"en-GB":"fr-FR",{style:"currency",currency:"GBP",currencyDisplay:"narrowSymbol"}).format(v)};
+const CURSYM={EUR:"€",USD:"$",GBP:"£"};
+let DISPCUR="EUR"; try{ DISPCUR=localStorage.getItem("boussole-cur")||"EUR"; }catch(_){}
 const CLS={ action:{l:"Actions",c:"#18A886"}, crypto:{l:"Crypto",c:"#9B70EE"}, etf:{l:"ETF",c:"#4E8BEF"}, or:{l:"Or",c:"#E0B54F"}, argent:{l:"Argent",c:"#B9C4D0"}, cuivre:{l:"Cuivre",c:"#C77B4A"}, bronze:{l:"Bronze",c:"#9A6B3F"}, maison:{l:"Maison / immo",c:"#5FB37A"}, montre:{l:"Montre",c:"#C9A24B"}, cash:{l:"Cash",c:"#5FA8D3"}, autre:{l:"Actif",c:"#8091A9"} };
 const ORDER=["action","crypto","etf","or","argent","cuivre","bronze","maison","montre","cash","autre"];
 const METALS={ or:{sym:"GC=F",gpu:31.1034768}, argent:{sym:"SI=F",gpu:31.1034768}, cuivre:{sym:"HG=F",gpu:453.59237} };
@@ -487,7 +494,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, snapshots:[], tdKey:"", reminders:[], pushSub:null}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -501,7 +508,7 @@ const App = {
   async load(){
     try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
       const row = data && data[0];
-      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; } }catch(e){}
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -515,7 +522,7 @@ const App = {
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
-      const payload={positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, savedAt:Date.now()};
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -530,9 +537,13 @@ const App = {
     },600);
   },
   async refreshRate(force){
-    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur,usd",{cache:"no-store"}); const j=await r.json(); const b=j&&j.bitcoin;
-      if(b&&b.eur>0&&b.usd>0){ this.S.rate=b.usd/b.eur; applyRate(this.S.rate); this.save(); this.render(); } }catch(e){ if(force) applyRate(this.S.rate); }
+    try{ const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur,usd,gbp",{cache:"no-store"}); const j=await r.json(); const b=j&&j.bitcoin;
+      if(b&&b.eur>0){ if(b.usd>0) this.S.rate=b.usd/b.eur; if(b.gbp>0) this.S.rateGbp=b.gbp/b.eur; applyRate(this.S.rate); this.save(); this.render(); } }catch(e){ if(force) applyRate(this.S.rate); }
   },
+  curRate(c){ return c==="USD"?(this.S.rate||1.16):(c==="GBP"?(this.S.rateGbp||0.86):1); },
+  curFmt(c,vEur){ const v=vEur*this.curRate(c); return c==="USD"?usdF.format(v):(c==="GBP"?gbpF.format(v):eurF.format(v)); },
+  fmtDisp(vEur){ return this.curFmt(DISPCUR, vEur); },
+  setDispCur(c){ DISPCUR=c; try{ localStorage.setItem("boussole-cur",c); }catch(_){} this.render(); },
   toEur(v,cur){ return cur==="USD" ? v/(this.S.rate||1.16) : v; },
   totals(){ let val=0,cost=0; const byCls={}; for(const p of this.S.positions){ const q=+p.qty||0; const ve=this.toEur(q*(+p.price||0),p.cur); val+=ve; cost+=this.toEur(q*(+p.pru||0),p.cur); byCls[p.cls]=(byCls[p.cls]||0)+ve; } return {val,cost,pnl:val-cost,byCls}; },
   go(t){
@@ -623,12 +634,12 @@ const App = {
       <div class="card hero">
         <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
           <div style="flex:1; min-width:190px">
-            <div class="lab">Valeur totale</div>
-            <div class="val">${eurF.format(t.val)}</div>
-            <div class="alt">≈ ${usdF.format(t.val*(this.S.rate||1.16))}</div>
-            <div class="pnl ${t.pnl>=0?'up':'down'}">${(t.pnl>=0?'+':'')+eurF.format(t.pnl)}${t.cost>0?` (${(t.pnl>=0?'+':'')+(t.pnl/t.cost*100).toLocaleString('fr-FR',{maximumFractionDigits:1})} %)`:''}</div>
+            <div class="lab">Valeur totale <span class="curtog">${["EUR","USD","GBP"].map(c=>`<button class="cbtn${DISPCUR===c?" on":""}" onclick="App.setDispCur('${c}')">${CURSYM[c]}</button>`).join("")}</span></div>
+            <div class="val">${this.fmtDisp(t.val)}</div>
+            <div class="alt">${["EUR","USD","GBP"].filter(c=>c!==DISPCUR).map(c=>"≈ "+this.curFmt(c,t.val)).join("  ·  ")}</div>
+            <div class="pnl ${t.pnl>=0?'up':'down'}">${(t.pnl>=0?'+':'')+this.fmtDisp(t.pnl)}${t.cost>0?` (${(t.pnl>=0?'+':'')+(t.pnl/t.cost*100).toLocaleString('fr-FR',{maximumFractionDigits:1})} %)`:''}</div>
           </div>
-          ${has?`<div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap">${pie(alloc,t.val)}<div style="display:flex; flex-direction:column; gap:8px">${alloc.map(x=>`<span class="mut" style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CLS[x.k].c};margin-right:7px"></span>${CLS[x.k].l} <b style="color:var(--ink)">${t.val?Math.round(x.v/t.val*100):0} %</b> <span style="opacity:.65">${eurF.format(x.v)}</span></span>`).join("")}</div></div>`:""}
+          ${has?`<div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap">${pie(alloc,t.val)}<div style="display:flex; flex-direction:column; gap:8px">${alloc.map(x=>`<span class="mut" style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CLS[x.k].c};margin-right:7px"></span>${CLS[x.k].l} <b style="color:var(--ink)">${t.val?Math.round(x.v/t.val*100):0} %</b> <span style="opacity:.65">${this.fmtDisp(x.v)}</span></span>`).join("")}</div></div>`:""}
         </div>
         ${this.lastSync?`<div class="mut" style="font-size:11.5px;margin-top:12px">Cours actualisés a ${new Date(this.lastSync).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}.</div>`:""}
       </div>
@@ -772,6 +783,10 @@ const App = {
   enableCode(){ const c=prompt("Choisis un code (4 a 8 chiffres) pour verrouiller l'appli sur cet appareil :"); if(c==null) return; Lock.setupCode(c.trim()).then(ok=>{ if(ok){ alert("Code active."); this.render(); } }); },
   disableLock(){ if(confirm("Désactiver le verrouillage sur cet appareil ?")){ Lock.clear(); this.render(); } },
   remAmt(r){ return r.cur==="USD"?usdF.format(+r.amount||0):eurF.format(+r.amount||0); },
+  remEstim(){ const el=$("r-estim"); if(!el) return; const amt=parseFloat(String(($("r-amount")||{}).value||"").replace(",",".").replace(/\s/g,""))||0; const p=this._remPrice; if(!(p>0)||!(amt>0)){ el.textContent=""; return; } const u=amt/p, cur=this._remPriceCur||"EUR"; const pf=cur==="USD"?usdF.format(p):eurF.format(p); el.innerHTML="≈ <b style=\"color:var(--ink)\">"+u.toLocaleString("fr-FR",{maximumFractionDigits:u<1?4:3})+"</b> unité"+(u>=2?"s":"")+" au cours actuel ("+pf+" l'unité)"; },
+  remFetchPrice(sym,cur){ this._remPrice=0; this._remPriceCur=cur||"EUR"; if(!sym){ this.remEstim(); return; } fetch(RELAIS+"?symbols="+encodeURIComponent(sym),{cache:"no-store"}).then(r=>r.json()).then(j=>{ const d=j&&j.quotes&&j.quotes[sym]; if(d&&d.price>0){ this._remPrice=d.price; if(d.currency==="USD"||d.currency==="EUR") this._remPriceCur=d.currency; this.remEstim(); } }).catch(()=>{}); },
+  remSearch(q){ q=(q||"").trim(); const rc=$("rs-search-res"); clearTimeout(this._rsT); if(q.length<2){ if(rc){ rc.className="searchres"; rc.innerHTML=""; } return; } this._rsT=setTimeout(async()=>{ try{ const r=await fetch(RELAIS+"?search="+encodeURIComponent(q),{cache:"no-store"}); const j=await r.json(); const res=(j&&j.results)||[]; this._rsRes=res; const rc2=$("rs-search-res"); if(!rc2) return; if(!res.length){ rc2.className="searchres on"; rc2.innerHTML='<div class="srhint">Aucun résultat.</div>'; return; } const tlab={EQUITY:"Action",ETF:"ETF",CRYPTOCURRENCY:"Crypto",MUTUALFUND:"Fonds",INDEX:"Indice",CURRENCY:"Devise"}; rc2.className="searchres on"; rc2.innerHTML=res.map((x,i)=>`<div class="sr" onclick="App.remPickIdx(${i})"><div><div class="srname">${esc(x.name)}</div><div class="srsym">${esc(x.symbol)}</div></div><span class="srx">${tlab[x.type]||esc(x.type)}<br>${esc(x.exch||"")}</span></div>`).join(""); }catch(e){} },300); },
+  remPickIdx(i){ const x=this._rsRes&&this._rsRes[i]; if(!x) return; const rc=$("rs-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; } const ss=$("rs-search"); if(ss) ss.value=x.name; if($("r-asset")) $("r-asset").value=x.name; if($("r-ysym")) $("r-ysym").value=x.symbol; if(x.type==="CRYPTOCURRENCY" && $("r-cur")) $("r-cur").value="USD"; this.remFetchPrice(x.symbol, ($("r-cur")||{}).value); },
   remN(r){ return r.everyN==null ? 1 : +r.everyN; },
   remAnchor(r){ if(r.date){ const p=String(r.date).split("-").map(Number); return {y:p[0], m:(p[1]||1)-1, d:Math.min(28,Math.max(1,p[2]||1))}; } return {y:1970, m:0, d:Math.min(28,Math.max(1,+r.day||1))}; },
   remOccursDay(r,y,m){ const a=this.remAnchor(r), N=this.remN(r); if(N===0) return (a.y===y && a.m===m)?a.d:0; const diff=(y-a.y)*12+(m-a.m); if(diff<0 || diff%N!==0) return 0; return a.d; },
@@ -793,7 +808,7 @@ const App = {
     const asset=g("r-asset").trim(); if(!asset){ alert("Indique quoi acheter (ex : ETF Monde)."); return; }
     let everyN=parseInt(g("r-freq"),10); if(isNaN(everyN)) everyN=1;
     let date=g("r-date"); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert("Choisis une date."); return; }
-    const data={asset, amount:num(g("r-amount")), cur:g("r-cur")==="USD"?"USD":"EUR", everyN, date, note:g("r-note").trim()};
+    const data={asset, amount:num(g("r-amount")), cur:g("r-cur")==="USD"?"USD":"EUR", everyN, date, note:g("r-note").trim(), ysym:g("r-ysym").trim()};
     if(this.remEdit){ const r=this.S.reminders.find(x=>x.id===this.remEdit); if(r){ delete r.day; Object.assign(r,data); } }
     else { if(!this.S.reminders) this.S.reminders=[]; this.S.reminders.push({id:uid(), ...data, lastDone:""}); }
     this.remEdit=null; this.save(); this.renderRappels();
@@ -851,10 +866,12 @@ const App = {
       <div class="viewhead"><h2>Rappels d'achat</h2></div>
       <div class="card">
         <h3 style="margin-bottom:12px">${ed?"Modifier le rappel":"Ajouter un rappel"}</h3>
+        <div class="field searchbox"><label>Rechercher la valeur <span class="mut" style="font-weight:400">(facultatif, pour estimer combien d'unités)</span></label><input id="rs-search" autocomplete="off" placeholder="Tape un nom pour lier le cours (ex : LVMH, Bitcoin, ETF Monde)" oninput="App.remSearch(this.value)"><div id="rs-search-res" class="searchres"></div></div>
+        <input type="hidden" id="r-ysym" value="${esc(f.ysym||"")}">
         <div class="frow c4">
           <div class="field"><label>Quoi acheter <span class="mut" style="font-weight:400">(nom libre)</span></label><input id="r-asset" value="${esc(f.asset||"")}" placeholder="Ex : ETF Monde, Bitcoin, LVMH"></div>
-          <div class="field"><label>Combien</label><input id="r-amount" inputmode="decimal" value="${esc(f.amount)}" placeholder="150"></div>
-          <div class="field"><label>Devise</label><select id="r-cur"><option value="EUR" ${f.cur!=="USD"?"selected":""}>€ Euro</option><option value="USD" ${f.cur==="USD"?"selected":""}>$ Dollar</option></select></div>
+          <div class="field"><label>Combien <span class="mut" style="font-weight:400">(en argent, pas en nombre d'actions)</span></label><input id="r-amount" inputmode="decimal" value="${esc(f.amount)}" placeholder="150" oninput="App.remEstim()"></div>
+          <div class="field"><label>Devise</label><select id="r-cur" onchange="App.remEstim()"><option value="EUR" ${f.cur!=="USD"?"selected":""}>€ Euro</option><option value="USD" ${f.cur==="USD"?"selected":""}>$ Dollar</option></select></div>
           <div class="field"><label>Fréquence</label><select id="r-freq">
             <option value="1" ${fN===1?"selected":""}>Chaque mois</option>
             <option value="3" ${fN===3?"selected":""}>Tous les 3 mois</option>
@@ -867,12 +884,14 @@ const App = {
           <div class="field"><label>Date <span class="mut" style="font-weight:400">(1re échéance ; pour « chaque mois », seul le jour compte)</span></label><input id="r-date" type="date" value="${esc(fDate)}"></div>
           <div class="field" style="grid-column:span 3"><label>Note <span class="mut" style="font-weight:400">(facultatif)</span></label><input id="r-note" value="${esc(f.note||"")}" placeholder="Ex : sur le PEA, versement du mois"></div>
         </div>
+        <div id="r-estim" class="mut" style="font-size:12.5px;margin:-2px 0 10px;min-height:1em"></div>
         <div style="display:flex;gap:8px"><button class="btn small" onclick="App.saveRem()">${ed?"Enregistrer":"Ajouter le rappel"}</button>${ed?`<button class="btn small ghost" onclick="App.cancelRem()">Annuler</button>`:""}</div>
       </div>
       ${rem.length?this.remCalendar():""}
       ${rem.length?`<div class="mut" style="text-align:center;margin:2px 0 12px">Total prévu ce mois-ci : <b style="color:var(--ink)">${eurF.format(monthTotal)}</b> si tu fais tous tes achats.</div>`:""}
       <div class="remlist">${items}</div>
       <div class="mut" style="text-align:center;margin-top:10px">Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.</div>`;
+    this._remPrice=0; if(ed && ed.ysym){ this.remFetchPrice(ed.ysym, ed.cur); }
   },
   openChart(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; this.CHART={id, range:"1mo", rendered:""}; this.renderPortfolio(); this.loadChart(); const z=$("chartzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
   closeChart(){ this.CHART=null; this.renderPortfolio(); },
