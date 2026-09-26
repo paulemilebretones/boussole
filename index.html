@@ -174,6 +174,9 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .recobar>div{height:100%}
 .kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
 .kstat{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+@keyframes linedraw{to{stroke-dashoffset:0}}
+.linedraw{stroke-dasharray:1;stroke-dashoffset:1;animation:linedraw .85s cubic-bezier(.4,0,.2,1) forwards}
+@media (prefers-reduced-motion:reduce){.linedraw{animation:none;stroke-dashoffset:0}}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -489,7 +492,7 @@ function lineChart(points, up, cur){
   const fmtD=t=> t?new Date(t*1000).toLocaleDateString(LANG==="en"?"en-US":"fr-FR",{day:"2-digit",month:"short",year:"2-digit"}):"";
   const guide=(i,c)=>`<line x1="${x(i).toFixed(1)}" y1="6" x2="${x(i).toFixed(1)}" y2="${(H-6).toFixed(1)}" stroke="${c}" stroke-width="1" stroke-dasharray="3 4" opacity="0.55" vector-effect="non-scaling-stroke"/><circle cx="${x(i).toFixed(1)}" cy="${y(vals[i]).toFixed(1)}" r="3.6" fill="${c}" stroke="#0C1120" stroke-width="1.4"/>`;
   const marks = (iMax!==iMin) ? guide(iMax,"#E0B54F")+guide(iMin,"#8FA0BF") : "";
-  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:180px;display:block"><defs><linearGradient id="cfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.25"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#cfill)"/><polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>${marks}</svg>`;
+  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:180px;display:block"><defs><linearGradient id="cfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.25"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#cfill)"/><polyline class="linedraw" pathLength="1" points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>${marks}</svg>`;
   const legend = (iMax!==iMin) ? `<div class="chartxt"><span><span class="cdot" style="background:#E0B54F"></span>Plus haut : <b>${fmtV(max)}</b> le ${fmtD(points[iMax].t)}</span><span><span class="cdot" style="background:#8FA0BF"></span>Plus bas : <b>${fmtV(min)}</b> le ${fmtD(points[iMin].t)}</span></div>` : "";
   return svg + legend;
 }
@@ -968,7 +971,7 @@ const App = {
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
     return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><h3 style="font-size:17px">${esc(p.name)} <span class="mut" style="font-size:13px">${esc(this.ysym(p)||"?")}</span></h3><div class="grow"></div><button class="rowbtn" title="Fermer" onclick="App.closeChart()">✕</button></div>
       <div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.CHART.range===r[0]?' on':''}" onclick="App.chartRange('${r[0]}')">${r[1]}</button>`).join("")}</div>
-      <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div>`;
+      <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div><div id="pstatsbox"></div>`;
   },
   async loadChart(){
     if(!this.CHART) return; const p=this.S.positions.find(x=>x.id===this.CHART.id); if(!p) return;
@@ -982,6 +985,7 @@ const App = {
       const cf=v=> d.currency==="USD"?usdF.format(v):(d.currency==="EUR"?eurF.format(v):(v.toFixed(2)+" "+(d.currency||"")));
       const h=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.CHART.range]||this.CHART.range}</span></div>${lineChart(d.points, up, d.currency)}`;
       this.CHART.rendered=h; if(box) box.innerHTML=h;
+      if(typeof Market!=="undefined") Market.loadStats(sym, "pstatsbox");
     }catch(e){ const h='<div class="mut">Graphique indisponible a l\'instant.</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; }
   },
   exportData(){
@@ -1041,7 +1045,7 @@ function evoChart(snaps, mode){
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:150px;display:block">
     <defs><linearGradient id="evofill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.28"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
     <path d="${area}" fill="url(#evofill)"/>
-    <polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    <polyline class="linedraw" pathLength="1" points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
   </svg>`;
 }
 
@@ -1155,9 +1159,10 @@ const Market={
       bx.innerHTML=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.chartRange]||this.chartRange}</span></div>${lineChart(d.points, up, d.currency)}`;
     }catch(e){ const bx=$("mchartbox"); if(bx) bx.innerHTML='<div class="mut">Graphique indisponible.</div>'; }
   },
-  async loadStats(sym){
+  async loadStats(sym, boxId){
+    boxId=boxId||"mstatsbox";
     let s; try{ s=await this.cfetch(RELAIS+"?stats="+encodeURIComponent(sym),300000); }catch(e){ return; }
-    const bx=$("mstatsbox"); if(!bx || !s || s.error) return;
+    const bx=$(boxId); if(!bx || !s || s.error) return;
     const cur=s.currency;
     const fmtC=v=> (v==null)?"?":(cur==="USD"?usdF.format(v):(cur==="EUR"?eurF.format(v):(v.toLocaleString("fr-FR",{maximumFractionDigits:2})+(cur?(" "+cur):""))));
     const t=s.trend||{}, tot=((t.strongBuy||0)+(t.buy||0)+(t.hold||0)+(t.sell||0)+(t.strongSell||0))||0;
