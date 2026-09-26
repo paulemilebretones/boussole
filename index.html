@@ -165,6 +165,9 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .pleg .pdot{width:10px;height:10px;border-radius:3px;margin-right:7px;display:inline-block;flex:none}
 .pleg.off{opacity:.4;text-decoration:line-through}
 .pleg:hover{color:var(--ink)}
+.chartxt{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+.chartxt b{color:var(--ink)}
+.chartxt .cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 /* marche */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media(max-width:640px){.mgrid{grid-template-columns:1fr}}
@@ -466,13 +469,20 @@ function applyRate(r){ const el=$("ratechip"); if(el) el.textContent="1 € = "+
 
 const RELAIS="/api/cours";
 const RANGELABEL={ "1d":"1 jour","5d":"1 semaine","1mo":"1 mois","6mo":"6 mois","ytd":"depuis janvier","1y":"1 an","5y":"5 ans","max":"max" };
-function lineChart(points, up){
+function lineChart(points, up, cur){
   const vals=points.map(p=>p.c), n=points.length, W=680, H=180, pad=8;
-  let min=vals[0], max=vals[0]; for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
+  let min=vals[0], max=vals[0], iMax=0, iMin=0;
+  for(let i=0;i<n;i++){ const v=vals[i]; if(v<min){min=v;iMin=i;} if(v>max){max=v;iMax=i;} }
   const span=(max-min)||1, x=i=>pad+i*(W-2*pad)/(n-1), y=v=>H-pad-(v-min)/span*(H-2*pad);
   const pts=points.map((p,i)=>x(i).toFixed(1)+","+y(p.c).toFixed(1));
   const col=up?"#4CC38A":"#F2846B", area="M"+pad+","+(H-pad)+" L"+pts.join(" L")+" L"+x(n-1).toFixed(1)+","+(H-pad)+" Z";
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:180px;display:block"><defs><linearGradient id="cfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.25"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#cfill)"/><polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+  const fmtV=v=> cur==="USD"?usdF.format(v):(cur==="EUR"?eurF.format(v):v.toLocaleString("fr-FR",{maximumFractionDigits:2})+(cur?(" "+cur):""));
+  const fmtD=t=> t?new Date(t*1000).toLocaleDateString(LANG==="en"?"en-US":"fr-FR",{day:"2-digit",month:"short",year:"2-digit"}):"";
+  const guide=(i,c)=>`<line x1="${x(i).toFixed(1)}" y1="6" x2="${x(i).toFixed(1)}" y2="${(H-6).toFixed(1)}" stroke="${c}" stroke-width="1" stroke-dasharray="3 4" opacity="0.55" vector-effect="non-scaling-stroke"/><circle cx="${x(i).toFixed(1)}" cy="${y(vals[i]).toFixed(1)}" r="3.6" fill="${c}" stroke="#0C1120" stroke-width="1.4"/>`;
+  const marks = (iMax!==iMin) ? guide(iMax,"#E0B54F")+guide(iMin,"#8FA0BF") : "";
+  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:180px;display:block"><defs><linearGradient id="cfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.25"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#cfill)"/><polyline points="${pts.join(" ")}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>${marks}</svg>`;
+  const legend = (iMax!==iMin) ? `<div class="chartxt"><span><span class="cdot" style="background:#E0B54F"></span>Plus haut : <b>${fmtV(max)}</b> le ${fmtD(points[iMax].t)}</span><span><span class="cdot" style="background:#8FA0BF"></span>Plus bas : <b>${fmtV(min)}</b> le ${fmtD(points[iMin].t)}</span></div>` : "";
+  return svg + legend;
 }
 const COINS={btc:"bitcoin",xbt:"bitcoin",eth:"ethereum",sol:"solana",ada:"cardano",xrp:"ripple",bnb:"binancecoin",doge:"dogecoin",dot:"polkadot",matic:"matic-network",pol:"matic-network",ltc:"litecoin",link:"chainlink",avax:"avalanche-2",atom:"cosmos",uni:"uniswap",trx:"tron",xlm:"stellar",algo:"algorand",xmr:"monero",bch:"bitcoin-cash",near:"near",apt:"aptos",arb:"arbitrum",op:"optimism",sui:"sui",shib:"shiba-inu",pepe:"pepe",ton:"the-open-network"};
 function coinId(p){ const t=(p.ticker||"").toLowerCase().trim(), n=(p.name||"").toLowerCase().trim(); return COINS[t]||COINS[n]||null; }
@@ -947,7 +957,7 @@ const App = {
       if(!d||!d.points||d.points.length<2){ const h='<div class="mut">Pas de données pour « '+esc(sym)+' ». Vérifie le symbole (crayon).</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; return; }
       const pts=d.points.map(x=>x.c), last=pts[pts.length-1], first=pts[0], up=last>=first, pc=first?(last-first)/first*100:0;
       const cf=v=> d.currency==="USD"?usdF.format(v):(d.currency==="EUR"?eurF.format(v):(v.toFixed(2)+" "+(d.currency||"")));
-      const h=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.CHART.range]||this.CHART.range}</span></div>${lineChart(d.points, up)}`;
+      const h=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.CHART.range]||this.CHART.range}</span></div>${lineChart(d.points, up, d.currency)}`;
       this.CHART.rendered=h; if(box) box.innerHTML=h;
     }catch(e){ const h='<div class="mut">Graphique indisponible a l\'instant.</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; }
   },
@@ -1110,7 +1120,7 @@ const Market={
       if(!d||!d.points||d.points.length<2){ bx.innerHTML='<div class="mut">Pas de données.</div>'; return; }
       const pts=d.points.map(x=>x.c), last=pts[pts.length-1], first=pts[0], up=last>=first, pc=first?(last-first)/first*100:0;
       const cf=v=> d.currency==="USD"?usdF.format(v):(d.currency==="EUR"?eurF.format(v):(v.toFixed(2)+" "+(d.currency||"")));
-      bx.innerHTML=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.chartRange]||this.chartRange}</span></div>${lineChart(d.points, up)}`;
+      bx.innerHTML=`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px"><span class="mono" style="font-size:22px;font-weight:600">${cf(last)}</span><span class="${up?'up':'down'}" style="font-weight:700">${(up?'+':'')+pc.toFixed(2)} %</span><span class="mut" style="font-size:12px">sur ${RANGELABEL[this.chartRange]||this.chartRange}</span></div>${lineChart(d.points, up, d.currency)}`;
     }catch(e){ const bx=$("mchartbox"); if(bx) bx.innerHTML='<div class="mut">Graphique indisponible.</div>'; }
   }
 };
