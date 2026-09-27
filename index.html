@@ -174,6 +174,15 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .recobar>div{height:100%}
 .kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
 .kstat{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.trow2{display:flex;align-items:center;gap:8px;padding:5px 0}
+.tinput{width:66px;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 8px;font-family:inherit;text-align:right}
+.tgtrow{padding:9px 0;border-bottom:1px solid var(--line)}
+.tgtrow:last-child{border-bottom:none}
+.tgttop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tgtbar{position:relative;height:9px;background:var(--surface2);border-radius:5px;overflow:visible}
+.tgtreal{height:100%;border-radius:5px}
+.tgtmark{position:absolute;top:-3px;width:2px;height:15px;background:var(--ink);border-radius:1px}
+.tgtact{font-size:12px;font-weight:700;margin-top:5px}
 @keyframes linedraw{to{stroke-dashoffset:0}}
 .linedraw{stroke-dasharray:1;stroke-dashoffset:1;animation:linedraw .85s cubic-bezier(.4,0,.2,1) forwards}
 @media (prefers-reduced-motion:reduce){.linedraw{animation:none;stroke-dashoffset:0}}
@@ -525,7 +534,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[]}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -539,7 +548,7 @@ const App = {
   async load(){
     try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
       const row = data && data[0];
-      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; } }catch(e){}
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -553,7 +562,7 @@ const App = {
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, savedAt:Date.now()};
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -576,6 +585,29 @@ const App = {
   fmtDisp(vEur){ return this.curFmt(DISPCUR, vEur); },
   setDispCur(c){ DISPCUR=c; try{ localStorage.setItem("boussole-cur",c); }catch(_){} this.render(); },
   setEvoMode(m){ this.evoMode=m; this.render(); },
+  setTarget(k,v){ this.S.targets=this.S.targets||{}; const n=parseFloat(String(v).replace(",",".")); this.S.targets[k]=isNaN(n)?0:n; const sumEl=$("tgt-sum"); if(sumEl){ const s=Object.keys(this.S.targets).reduce((a,x)=>a+(+this.S.targets[x]||0),0); sumEl.textContent=s.toFixed(0)+" %"; sumEl.style.color=Math.abs(s-100)<0.5?"var(--gain)":"var(--loss)"; } },
+  fillTargetsFromCurrent(){ const t=this.totals(); this.S.targets={}; for(const k of ORDER){ const v=t.byCls[k]||0; if(v>0 && t.val>0) this.S.targets[k]=Math.round(v/t.val*100); } this._editTargets=true; this.renderPortfolio(); },
+  saveTargets(){ const tg=this.S.targets||{}; for(const k of Object.keys(tg)){ if(!(+tg[k]>0)) delete tg[k]; } this._editTargets=false; this.save(); this.renderPortfolio(); },
+  targetsCard(){
+    const t=this.totals(); if(t.val<=0) return "";
+    const held=ORDER.filter(k=>(t.byCls[k]||0)>0), tg=this.S.targets||{};
+    const hasT=Object.keys(tg).some(k=>+tg[k]>0);
+    if(this._editTargets){
+      const keys=Array.from(new Set([...held, ...Object.keys(tg)]));
+      const sum=keys.reduce((s,k)=>s+(+tg[k]||0),0);
+      const rows=keys.map(k=>`<div class="trow2"><span class="sw" style="background:${CLS[k]?CLS[k].c:"#888"}"></span><span style="flex:1">${CLS[k]?CLS[k].l:esc(k)}</span><input class="tinput" inputmode="decimal" value="${tg[k]!=null?tg[k]:""}" oninput="App.setTarget('${k}',this.value)"> %</div>`).join("");
+      return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><div class="mlab">Objectifs de répartition</div><div class="grow"></div><button class="btn small ghost" onclick="App.fillTargetsFromCurrent()">Copier l'actuel</button></div>${rows}<div class="mut" style="margin-top:10px">Total : <b id="tgt-sum" style="color:${Math.abs(sum-100)<0.5?"var(--gain)":"var(--loss)"}">${sum.toFixed(0)} %</b> <span style="opacity:.7">(vise 100 %)</span></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn small" onclick="App.saveTargets()">Enregistrer</button><button class="btn small ghost" onclick="App._editTargets=false;App.renderPortfolio()">Annuler</button></div></div>`;
+    }
+    if(!hasT){ return `<div class="card"><div class="mlab" style="margin-bottom:6px">Objectifs de répartition</div><div class="mut" style="margin-bottom:12px">Fixe tes cibles (ex. 60 % ETF, 25 % actions, 15 % crypto) et Boussole te dit combien acheter ou alléger pour t'en rapprocher.</div><button class="btn small" onclick="App._editTargets=true;App.renderPortfolio()">Définir mes objectifs</button></div>`; }
+    const keys=Array.from(new Set([...held, ...Object.keys(tg).filter(k=>+tg[k]>0)]));
+    const rows=keys.map(k=>{
+      const real=t.byCls[k]||0, realPc=t.val?real/t.val*100:0, tgtPc=+tg[k]||0, tgtEur=tgtPc/100*t.val, ecart=tgtEur-real;
+      const thr=Math.max(20, t.val*0.008);
+      const act = Math.abs(ecart)<thr ? '<span class="mut">équilibré</span>' : (ecart>0?`<span class="up">+ Acheter ${this.fmtDisp(ecart)}</span>`:`<span class="down">- Alléger ${this.fmtDisp(-ecart)}</span>`);
+      return `<div class="tgtrow"><div class="tgttop"><span><span class="sw" style="background:${CLS[k]?CLS[k].c:"#888"}"></span>${CLS[k]?CLS[k].l:esc(k)}</span><span class="mono" style="font-size:12.5px">${realPc.toFixed(0)} % <span class="mut">/ cible ${tgtPc.toFixed(0)} %</span></span></div><div class="tgtbar"><div class="tgtreal" style="width:${Math.min(100,realPc).toFixed(1)}%;background:${CLS[k]?CLS[k].c:"#888"}"></div><div class="tgtmark" style="left:${Math.min(100,tgtPc).toFixed(1)}%"></div></div><div class="tgtact">${act}</div></div>`;
+    }).join("");
+    return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><div class="mlab">Objectifs de répartition</div><div class="grow"></div><button class="btn small ghost" onclick="App._editTargets=true;App.renderPortfolio()">Modifier</button></div>${rows}<div class="mut" style="font-size:11.5px;margin-top:10px">Le repère clair sur chaque barre = ta cible. Simple calcul par rapport a tes objectifs, aucun conseil.</div></div>`;
+  },
   pieGroups(){
     const by=this.pieBy||"cls", agg={};
     for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); if(ve<=0) continue;
@@ -714,7 +746,8 @@ const App = {
         ${has?`<div class="tablewrap"><table class="list"><thead><tr><th>Position</th><th>Enveloppe</th><th class="num">Qté</th><th class="num">Prix d'achat</th><th class="num">Prix actuel</th><th class="num">Valeur (€)</th><th class="num">+/-</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
           :`<div class="empty"><div class="big">🧭</div>Ton portefeuille est vide.<br><span class="mut">Ajoute ta première ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».</span></div>`}
       </div>
-      ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${eurF.format(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
+      ${has?this.targetsCard():""}
+      ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div class="mut" style="text-align:center">Sauvegarde automatique sur ton compte. Bouton <b>↻ Cours</b> pour rafraîchir les prix ; clique le nom d'une ligne pour son graphique.</div>`;
     this.renderForm();
   },

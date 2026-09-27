@@ -36,7 +36,7 @@ async function yahooAuth(){
 }
 async function stats(symbol){
   const a = await yahooAuth();
-  const mods = "financialData,recommendationTrend,summaryDetail,defaultKeyStatistics,price";
+  const mods = "financialData,recommendationTrend,summaryDetail,defaultKeyStatistics,price,calendarEvents";
   const u = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${mods}&crumb=${encodeURIComponent(a.crumb)}`;
   const r = await fetch(u, { headers:{ "User-Agent":UA_FULL, "Accept":"application/json", "Cookie":a.cookie } });
   if(!r.ok) return { error:"quoteSummary "+r.status, crumbLen:(a.crumb||"").length };
@@ -44,15 +44,19 @@ async function stats(symbol){
   const res = d && d.quoteSummary && d.quoteSummary.result && d.quoteSummary.result[0];
   if(!res) return { error:"vide" };
   const num=x=> (x&&typeof x==="object"&&"raw" in x)? x.raw : (typeof x==="number"?x:null);
-  const fd=res.financialData||{}, sd=res.summaryDetail||{}, ks=res.defaultKeyStatistics||{}, pr=res.price||{};
+  const fd=res.financialData||{}, sd=res.summaryDetail||{}, ks=res.defaultKeyStatistics||{}, pr=res.price||{}, ce=res.calendarEvents||{};
   const tr=(res.recommendationTrend&&res.recommendationTrend.trend&&res.recommendationTrend.trend[0])||{};
   return {
     symbol, currency: pr.currency||fd.financialCurrency||null,
     reco: fd.recommendationKey||null, recoMean: num(fd.recommendationMean), nAnalysts: num(fd.numberOfAnalystOpinions),
     target: num(fd.targetMeanPrice), targetHigh: num(fd.targetHighPrice), targetLow: num(fd.targetLowPrice), price: num(fd.currentPrice)||num(pr.regularMarketPrice),
     trend: { strongBuy:num(tr.strongBuy)||0, buy:num(tr.buy)||0, hold:num(tr.hold)||0, sell:num(tr.sell)||0, strongSell:num(tr.strongSell)||0 },
-    pe: num(sd.trailingPE), marketCap: num(sd.marketCap)||num(pr.marketCap), divYield: num(sd.dividendYield), beta: num(sd.beta)||num(ks.beta),
-    wk52High: num(sd.fiftyTwoWeekHigh), wk52Low: num(sd.fiftyTwoWeekLow)
+    pe: num(sd.trailingPE), marketCap: num(sd.marketCap)||num(pr.marketCap), divYield: num(sd.dividendYield)||num(sd.trailingAnnualDividendYield), beta: num(sd.beta)||num(ks.beta),
+    wk52High: num(sd.fiftyTwoWeekHigh), wk52Low: num(sd.fiftyTwoWeekLow),
+    divRate: num(sd.dividendRate)||num(sd.trailingAnnualDividendRate)||null,
+    exDiv: num(sd.exDividendDate)||num(ce.exDividendDate)||null,
+    divDate: num(ce.dividendDate)||null,
+    earnings: (ce.earnings && ce.earnings.earningsDate && ce.earnings.earningsDate[0] ? num(ce.earnings.earningsDate[0]) : null)
   };
 }
 async function cours(url){
