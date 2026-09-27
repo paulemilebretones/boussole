@@ -588,6 +588,27 @@ const App = {
   setTarget(k,v){ this.S.targets=this.S.targets||{}; const n=parseFloat(String(v).replace(",",".")); this.S.targets[k]=isNaN(n)?0:n; const sumEl=$("tgt-sum"); if(sumEl){ const s=Object.keys(this.S.targets).reduce((a,x)=>a+(+this.S.targets[x]||0),0); sumEl.textContent=s.toFixed(0)+" %"; sumEl.style.color=Math.abs(s-100)<0.5?"var(--gain)":"var(--loss)"; } },
   fillTargetsFromCurrent(){ const t=this.totals(); this.S.targets={}; for(const k of ORDER){ const v=t.byCls[k]||0; if(v>0 && t.val>0) this.S.targets[k]=Math.round(v/t.val*100); } this._editTargets=true; this.renderPortfolio(); },
   saveTargets(){ const tg=this.S.targets||{}; for(const k of Object.keys(tg)){ if(!(+tg[k]>0)) delete tg[k]; } this._editTargets=false; this.save(); this.renderPortfolio(); },
+  async loadDividends(){
+    const box=$("divbox"); if(!box) return;
+    const holds=this.S.positions.filter(p=>(p.cls==="action"||p.cls==="etf") && this.ysym(p) && (+p.qty>0));
+    if(!holds.length){ box.innerHTML=""; return; }
+    const syms=Array.from(new Set(holds.map(p=>this.ysym(p))));
+    const sm={};
+    await Promise.all(syms.map(async s=>{ try{ sm[s]=await Market.cfetch(RELAIS+"?stats="+encodeURIComponent(s),600000); }catch(_){} }));
+    let total=0; const rows=[], events=[];
+    for(const p of holds){ const s=sm[this.ysym(p)]; if(!s||s.error||!(s.divRate>0)) continue;
+      const dcur=s.currency==="USD"?"USD":"EUR", inc=this.toEur(s.divRate*(+p.qty), dcur);
+      total+=inc; rows.push({name:p.name, income:inc, yld:s.divYield});
+      if(s.divDate) events.push({name:p.name, t:s.divDate, type:"Versement"}); else if(s.exDiv) events.push({name:p.name, t:s.exDiv, type:"Détachement"});
+    }
+    const box2=$("divbox"); if(!box2) return;
+    if(!rows.length){ box2.innerHTML=""; return; }
+    const t=this.totals(), yPort=t.val?total/t.val*100:0; rows.sort((a,b)=>b.income-a.income);
+    const rowsH=rows.map(r=>`<div class="tgttop" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(r.name)}${r.yld?` <span class="mut" style="font-size:11px">${(r.yld*100).toFixed(1)} %</span>`:""}</span><span class="mono">${this.fmtDisp(r.income)} <span class="mut" style="font-size:11px">/an</span></span></div>`).join("");
+    const now=Date.now()/1000;
+    const up=events.filter(e=>e.t>now-86400).sort((a,b)=>a.t-b.t).slice(0,6).map(e=>`<div class="tgttop" style="padding:5px 0"><span class="mut" style="font-size:12.5px">${e.type} · ${esc(e.name)}</span><span class="mono mut" style="font-size:12px">${new Date(e.t*1000).toLocaleDateString(LANG==="en"?"en-US":"fr-FR",{day:"2-digit",month:"short",year:"2-digit"})}</span></div>`).join("");
+    box2.innerHTML=`<div class="card"><div class="mlab" style="margin-bottom:10px">Dividendes estimés</div><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px"><div><div class="mut" style="font-size:11px">Revenu annuel estimé</div><div style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(total)}</div></div><div><div class="mut" style="font-size:11px">Rendement du portefeuille</div><div style="font-size:22px;font-weight:700">${yPort.toFixed(2)} %</div></div></div>${rowsH}${up?`<div class="mlab" style="margin:14px 0 6px">Prochains versements</div>${up}`:""}<div class="mut" style="font-size:11px;margin-top:10px">Estimation d'après les dividendes annuels publiés (Yahoo). À titre informatif, non garanti.</div></div>`;
+  },
   targetsCard(){
     const t=this.totals(); if(t.val<=0) return "";
     const held=ORDER.filter(k=>(t.byCls[k]||0)>0), tg=this.S.targets||{};
@@ -748,8 +769,10 @@ const App = {
       </div>
       ${has?this.targetsCard():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
+      <div id="divbox"></div>
       <div class="mut" style="text-align:center">Sauvegarde automatique sur ton compte. Bouton <b>↻ Cours</b> pour rafraîchir les prix ; clique le nom d'une ligne pour son graphique.</div>`;
     this.renderForm();
+    if(has) this.loadDividends();
   },
   renderForm(){
     const z=$("formzone"); if(!z) return; if(!this.FORM){ z.innerHTML=""; return; }
