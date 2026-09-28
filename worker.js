@@ -145,7 +145,11 @@ async function _sendPush(sub, payloadStr, vapidPrivJWK, subject){
   const res=await fetch(sub.endpoint, { method:"POST", headers:{ "Authorization":auth, "Content-Encoding":"aes128gcm", "Content-Type":"application/octet-stream", "TTL":"86400", "Urgency":"normal" }, body });
   return res.status;
 }
-function parseVapid(env){ try{ return env.VAPID_PRIVATE ? JSON.parse(env.VAPID_PRIVATE) : null; }catch(_){ return null; } }
+function parseVapid(env){
+  try{ if(env.VAPID_PRIVATE){ const j=JSON.parse(env.VAPID_PRIVATE); if(j&&j.d) return j; } }catch(_){}
+  if(env.VAPID_D){ try{ const pub=_b64urlToBytes(VAPID_PUBLIC); return {kty:"EC",crv:"P-256",d:String(env.VAPID_D).trim(),x:_b64url(pub.slice(1,33)),y:_b64url(pub.slice(33,65)),ext:true,key_ops:["sign"]}; }catch(_){} }
+  return null;
+}
 async function runDailyReminders(env){
   const SUPA=env.SUPABASE_URL || "https://smmaxgjxsisoxqlpoopi.supabase.co";
   const KEY=env.SUPABASE_SERVICE_KEY;
@@ -218,7 +222,7 @@ export default {
     // Declencheur manuel de test (protege par un jeton) : /api/push-now?k=<PUSH_TEST_KEY>
     if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
       const diag={ran:true};
-      let vp=null; try{ vp=env.VAPID_PRIVATE?JSON.parse(env.VAPID_PRIVATE):null; diag.vapidOk=!!(vp&&vp.d); }catch(e){ diag.vapidOk=false; diag.vapidError="cle VAPID_PRIVATE invalide (guillemets ou copie): "+String(e); }
+      const vp=parseVapid(env); diag.vapidOk=!!(vp&&vp.d);
       diag.hasServiceKey=!!env.SUPABASE_SERVICE_KEY;
       try{ await runDailyReminders(env); }catch(e){ diag.remindersError=String(e); }
       try{ await runPriceAlerts(env); }catch(e){ diag.alertsError=String(e); }
