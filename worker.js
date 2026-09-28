@@ -143,7 +143,9 @@ async function _sendPush(sub, payloadStr, vapidPrivJWK, subject){
   const body=await _encryptPayload(payloadStr, _b64urlToBytes(sub.keys.p256dh), _b64urlToBytes(sub.keys.auth));
   const auth=await _vapidHeader(sub.endpoint, vapidPrivJWK, subject);
   const res=await fetch(sub.endpoint, { method:"POST", headers:{ "Authorization":auth, "Content-Encoding":"aes128gcm", "Content-Type":"application/octet-stream", "TTL":"86400", "Urgency":"normal" }, body });
-  return res.status;
+  if(res.status>=200 && res.status<300) return res.status;
+  let t=""; try{ t=(await res.text()||"").slice(0,200); }catch(_){}
+  const e=new Error("push "+res.status+(t?" "+t:"")); e.status=res.status; throw e;
 }
 function parseVapid(env){
   try{ if(env.VAPID_PRIVATE){ const j=JSON.parse(env.VAPID_PRIVATE); if(j&&j.d) return j; } }catch(_){}
