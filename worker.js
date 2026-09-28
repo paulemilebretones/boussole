@@ -145,10 +145,11 @@ async function _sendPush(sub, payloadStr, vapidPrivJWK, subject){
   const res=await fetch(sub.endpoint, { method:"POST", headers:{ "Authorization":auth, "Content-Encoding":"aes128gcm", "Content-Type":"application/octet-stream", "TTL":"86400", "Urgency":"normal" }, body });
   return res.status;
 }
+function parseVapid(env){ try{ return env.VAPID_PRIVATE ? JSON.parse(env.VAPID_PRIVATE) : null; }catch(_){ return null; } }
 async function runDailyReminders(env){
   const SUPA=env.SUPABASE_URL || "https://smmaxgjxsisoxqlpoopi.supabase.co";
   const KEY=env.SUPABASE_SERVICE_KEY;
-  const VAPID_PRIV=env.VAPID_PRIVATE ? JSON.parse(env.VAPID_PRIVATE) : null;
+  const VAPID_PRIV=parseVapid(env);
   const SUBJECT=env.VAPID_SUBJECT || "mailto:boussole@boussole.app";
   if(!KEY || !VAPID_PRIV) return;
   const now=new Date(), Y=now.getUTCFullYear(), M=now.getUTCMonth(), D=now.getUTCDate();
@@ -181,7 +182,7 @@ async function sendAlertPush(sub, a, price, kind, vapidPriv, subject){
 }
 async function runPriceAlerts(env){
   const SUPA=env.SUPABASE_URL || "https://smmaxgjxsisoxqlpoopi.supabase.co";
-  const KEY=env.SUPABASE_SERVICE_KEY, VAPID_PRIV=env.VAPID_PRIVATE?JSON.parse(env.VAPID_PRIVATE):null, SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
+  const KEY=env.SUPABASE_SERVICE_KEY, VAPID_PRIV=parseVapid(env), SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
   if(!KEY || !VAPID_PRIV) return;
   let rows=[]; try{ const r=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok) rows=await r.json(); else return; }catch(_){ return; }
   const need=new Set();
@@ -216,8 +217,12 @@ export default {
     }
     // Declencheur manuel de test (protege par un jeton) : /api/push-now?k=<PUSH_TEST_KEY>
     if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
-      await runDailyReminders(env); await runPriceAlerts(env);
-      return new Response(JSON.stringify({ran:true}), {headers:CORS});
+      const diag={ran:true};
+      let vp=null; try{ vp=env.VAPID_PRIVATE?JSON.parse(env.VAPID_PRIVATE):null; diag.vapidOk=!!(vp&&vp.d); }catch(e){ diag.vapidOk=false; diag.vapidError="cle VAPID_PRIVATE invalide (guillemets ou copie): "+String(e); }
+      diag.hasServiceKey=!!env.SUPABASE_SERVICE_KEY;
+      try{ await runDailyReminders(env); }catch(e){ diag.remindersError=String(e); }
+      try{ await runPriceAlerts(env); }catch(e){ diag.alertsError=String(e); }
+      return new Response(JSON.stringify(diag), {headers:CORS});
     }
     return env.ASSETS.fetch(request);
   },
