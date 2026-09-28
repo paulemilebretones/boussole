@@ -224,6 +224,7 @@ export default {
       const diag={ran:true};
       const vp=parseVapid(env); diag.vapidOk=!!(vp&&vp.d);
       diag.hasServiceKey=!!env.SUPABASE_SERVICE_KEY;
+      try{ const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY; if(KEY){ const r=await fetch(SUPA+"/rest/v1/portfolios?select=data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok){ const rows=await r.json(); diag.portfolios=rows.length; diag.subscriptions=rows.filter(x=>x&&x.data&&x.data.pushSub&&x.data.pushSub.endpoint).length; diag.alertsTotal=rows.reduce((n,x)=>n+((x&&x.data&&Array.isArray(x.data.alerts))?x.data.alerts.length:0),0); } else diag.dbStatus=r.status; } }catch(e){ diag.dbError=String(e); }
       try{ await runDailyReminders(env); }catch(e){ diag.remindersError=String(e); }
       try{ await runPriceAlerts(env); }catch(e){ diag.alertsError=String(e); }
       return new Response(JSON.stringify(diag), {headers:CORS});
