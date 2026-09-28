@@ -171,6 +171,42 @@ async function runDailyReminders(env){
   }
 }
 
+async function sendAlertPush(sub, a, price, kind, vapidPriv, subject){
+  const u=a.cur==="USD"?" $":" EUR";
+  const pf=(Math.round(price*100)/100)+u, thr=a.price+u;
+  const cond=a.dir==="below"?"sous":"au-dessus de";
+  const title=kind==="atteint"?("Alerte atteinte : "+a.name):("Alerte proche : "+a.name);
+  const body=kind==="atteint"?(a.name+" est "+cond+" "+thr+" (cours "+pf+")"):(a.name+" s'approche de "+thr+" (cours "+pf+")");
+  try{ await _sendPush(sub, JSON.stringify({title, body, url:"/"}), vapidPriv, subject); }catch(_){}
+}
+async function runPriceAlerts(env){
+  const SUPA=env.SUPABASE_URL || "https://smmaxgjxsisoxqlpoopi.supabase.co";
+  const KEY=env.SUPABASE_SERVICE_KEY, VAPID_PRIV=env.VAPID_PRIVATE?JSON.parse(env.VAPID_PRIVATE):null, SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
+  if(!KEY || !VAPID_PRIV) return;
+  let rows=[]; try{ const r=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok) rows=await r.json(); else return; }catch(_){ return; }
+  const need=new Set();
+  for(const row of rows){ const al=row&&row.data&&row.data.alerts; if(Array.isArray(al)) for(const a of al){ if(a&&a.ysym&&a.price>0&&a.lastFired!=="atteint") need.add(a.ysym); } }
+  if(!need.size) return;
+  const price={};
+  for(const s of need){ try{ const q=await chart(s,"1d"); if(q&&q.price>0) price[s]=q.price; }catch(_){} }
+  const PROX=0.02;
+  for(const row of rows){
+    const data=row&&row.data; if(!data) continue;
+    const sub=data.pushSub, al=data.alerts;
+    if(!sub||!sub.endpoint||!Array.isArray(al)) continue;
+    let changed=false;
+    for(const a of al){
+      if(!a||!a.ysym||!(a.price>0)) continue;
+      const p=price[a.ysym]; if(!(p>0)) continue;
+      const reached=a.dir==="below"?(p<=a.price):(p>=a.price);
+      const close=a.dir==="below"?(p<=a.price*(1+PROX)):(p>=a.price*(1-PROX));
+      if(reached && a.lastFired!=="atteint"){ await sendAlertPush(sub,a,p,"atteint",VAPID_PRIV,SUBJECT); a.lastFired="atteint"; changed=true; }
+      else if(close && !reached && a.lastFired!=="proche" && a.lastFired!=="atteint"){ await sendAlertPush(sub,a,p,"proche",VAPID_PRIV,SUBJECT); a.lastFired="proche"; changed=true; }
+    }
+    if(changed){ try{ await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(row.user_id),{method:"PATCH",headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data})}); }catch(_){} }
+  }
+}
+
 export default {
   async fetch(request, env){
     const url = new URL(request.url);
@@ -178,14 +214,16 @@ export default {
       if(request.method === "OPTIONS") return new Response("ok", { headers: CORS });
       return cours(url);
     }
-    // Declencheur manuel de test (protege par un jeton) : /api/push-test?k=<VAPID_SUBJECT ou secret>
+    // Declencheur manuel de test (protege par un jeton) : /api/push-now?k=<PUSH_TEST_KEY>
     if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
-      await runDailyReminders(env);
+      await runDailyReminders(env); await runPriceAlerts(env);
       return new Response(JSON.stringify({ran:true}), {headers:CORS});
     }
     return env.ASSETS.fetch(request);
   },
   async scheduled(event, env, ctx){
-    ctx.waitUntil(runDailyReminders(env));
+    const h=new Date(event.scheduledTime||Date.now()).getUTCHours();
+    if(h===7) ctx.waitUntil(runDailyReminders(env));
+    ctx.waitUntil(runPriceAlerts(env));
   }
 };

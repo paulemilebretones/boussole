@@ -534,7 +534,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[]}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -548,7 +548,7 @@ const App = {
   async load(){
     try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
       const row = data && data[0];
-      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; } }catch(e){}
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -562,7 +562,7 @@ const App = {
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], savedAt:Date.now()};
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -646,6 +646,27 @@ const App = {
   togglePieIdx(i){ const g=this._pieGroups&&this._pieGroups[i]; if(!g) return; this.pieOff=this.pieOff||{}; this.pieOff[g.key]=!this.pieOff[g.key]; this.render(); },
   isWatched(sym){ return (this.S.watch||[]).some(w=>w.sym===sym); },
   toggleWatch(sym,name){ if(!sym) return; this.S.watch=this.S.watch||[]; const i=this.S.watch.findIndex(w=>w.sym===sym); if(i>=0) this.S.watch.splice(i,1); else this.S.watch.push({sym,name:name||sym}); this.save(); if(this.tab==="marche"&&typeof Market!=="undefined") Market.load(); },
+  alertSearch(q){ q=(q||"").trim(); const rc=$("al-search-res"); clearTimeout(this._alT); if(q.length<2){ if(rc){ rc.className="searchres"; rc.innerHTML=""; } return; } this._alT=setTimeout(async()=>{ try{ const r=await fetch(RELAIS+"?search="+encodeURIComponent(q),{cache:"no-store"}); const j=await r.json(); const res=(j&&j.results)||[]; this._alRes=res; const rc2=$("al-search-res"); if(!rc2) return; if(!res.length){ rc2.className="searchres on"; rc2.innerHTML='<div class="srhint">Aucun résultat.</div>'; return; } const tlab={EQUITY:"Action",ETF:"ETF",CRYPTOCURRENCY:"Crypto",MUTUALFUND:"Fonds",INDEX:"Indice",CURRENCY:"Devise"}; rc2.className="searchres on"; rc2.innerHTML=res.map((x,i)=>`<div class="sr" onclick="App.alertPickIdx(${i})"><div><div class="srname">${esc(x.name)}</div><div class="srsym">${esc(x.symbol)}</div></div><span class="srx">${tlab[x.type]||esc(x.type)}<br>${esc(x.exch||"")}</span></div>`).join(""); }catch(e){} },300); },
+  alertPickIdx(i){ const x=this._alRes&&this._alRes[i]; if(!x) return; const rc=$("al-search-res"); if(rc){ rc.className="searchres"; rc.innerHTML=""; } if($("al-search")) $("al-search").value=x.name; if($("al-ysym")) $("al-ysym").value=x.symbol; if($("al-name")) $("al-name").value=x.name; this.alertFetchPrice(x.symbol); },
+  alertFetchPrice(sym){ this._alPrice=0; const ref=$("al-ref"); if(ref) ref.textContent="Cours en cours…"; fetch(RELAIS+"?symbols="+encodeURIComponent(sym),{cache:"no-store"}).then(r=>r.json()).then(j=>{ const d=j&&j.quotes&&j.quotes[sym]; if(d&&d.price>0){ this._alPrice=d.price; const cur=(d.currency==="USD")?"USD":"EUR"; if($("al-cur")) $("al-cur").value=cur; const pf=cur==="USD"?usdF.format(d.price):eurF.format(d.price); const ref2=$("al-ref"); if(ref2) ref2.innerHTML="Cours actuel : <b style=\"color:var(--ink)\">"+pf+"</b>"; const pi=$("al-price"); if(pi && !pi.value) pi.value=String(Math.round(d.price*100)/100); } }).catch(()=>{ const r=$("al-ref"); if(r) r.textContent=""; }); },
+  addAlert(){ const g=id=>($(id)?$(id).value:""), num=v=>parseFloat(String(v).replace(",",".").replace(/\s/g,""))||0; const ysym=g("al-ysym").trim(); if(!ysym){ alert("Choisis d'abord une valeur à surveiller avec la recherche."); return; } const price=num(g("al-price")); if(!(price>0)){ alert("Indique un prix seuil."); return; } if(!this.S.alerts) this.S.alerts=[]; this.S.alerts.push({id:uid(), ysym, name:g("al-name").trim()||ysym, cur:g("al-cur")==="USD"?"USD":"EUR", dir:g("al-dir")==="below"?"below":"above", price, lastFired:""}); this.save(); this.renderRappels(); },
+  delAlert(id){ this.S.alerts=(this.S.alerts||[]).filter(a=>a.id!==id); this.save(); this.renderRappels(); },
+  rearmAlert(id){ const a=(this.S.alerts||[]).find(x=>x.id===id); if(a){ a.lastFired=""; this.save(); this.renderRappels(); } },
+  alertsCard(){
+    const al=this.S.alerts||[];
+    const form=`<div class="card" style="margin-top:14px"><div class="mlab" style="margin-bottom:4px">Alertes de prix</div><div class="mut" style="margin-bottom:12px;font-size:12.5px">Reçois une notification quand une valeur atteint un prix (et un préavis quand elle s'en approche).</div>
+      <div class="field searchbox"><label>Valeur à surveiller <span class="mut" style="font-weight:400">(action, ETF, crypto)</span></label><input id="al-search" autocomplete="off" placeholder="Ex : Ubisoft, Nvidia, Bitcoin" oninput="App.alertSearch(this.value)"><div id="al-search-res" class="searchres"></div></div>
+      <input type="hidden" id="al-ysym"><input type="hidden" id="al-name"><input type="hidden" id="al-cur" value="EUR">
+      <div class="frow c4">
+        <div class="field" style="grid-column:span 2"><label>Condition</label><select id="al-dir"><option value="above">Monte au-dessus de</option><option value="below">Descend en dessous de</option></select></div>
+        <div class="field"><label>Prix seuil</label><input id="al-price" inputmode="decimal" placeholder="450"></div>
+        <div class="field"><label style="visibility:hidden">.</label><div id="al-ref" class="mut" style="font-size:12.5px;padding-top:9px"></div></div>
+      </div>
+      <button class="btn small" onclick="App.addAlert()">Ajouter l'alerte</button></div>`;
+    const statusOf=a=> a.lastFired==="atteint"?'<span class="rembadge done">✓ Atteint</span>':(a.lastFired==="proche"?'<span class="rembadge due">S\'approche</span>':'<span class="rembadge soon">En attente</span>');
+    const list = al.length ? `<div class="card" style="margin-top:14px"><div class="mlab" style="margin-bottom:10px">Mes alertes (${al.length})</div>${al.map(a=>`<div class="tgttop" style="padding:9px 0;border-bottom:1px solid var(--line)"><div style="flex:1"><b>${esc(a.name||a.ysym)}</b> <span class="mut" style="font-size:12px">${a.dir==="above"?"≥":"≤"} ${a.cur==="USD"?usdF.format(a.price):eurF.format(a.price)}</span><div style="margin-top:5px">${statusOf(a)}${a.lastFired?` <span class="lnk" style="font-size:11px;margin-left:6px" onclick="App.rearmAlert('${a.id}')">réarmer</span>`:""}</div></div><button class="rowbtn" title="Supprimer" onclick="App.delAlert('${a.id}')">✕</button></div>`).join("")}</div>` : "";
+    return form + list;
+  },
   pieBlock(){
     const by=this.pieBy||"cls", off=this.pieOff||{};
     const groups=this.pieGroups(); this._pieGroups=groups;
@@ -1016,7 +1037,8 @@ const App = {
       ${rem.length?this.remCalendar():""}
       ${rem.length?`<div class="mut" style="text-align:center;margin:2px 0 12px">Total prévu ce mois-ci : <b style="color:var(--ink)">${eurF.format(monthTotal)}</b> si tu fais tous tes achats.</div>`:""}
       <div class="remlist">${items}</div>
-      <div class="mut" style="text-align:center;margin-top:10px">Les rappels s'affichent quand tu ouvres l'appli. Une appli web ne peut pas envoyer de notification quand elle est fermée sur iPhone.</div>`;
+      ${this.alertsCard()}
+      <div class="mut" style="text-align:center;margin-top:14px">Les rappels s'affichent à l'ouverture de l'appli ; les alertes de prix arrivent en notification (une fois les notifications activées).</div>`;
     this._remPrice=0; if(ed && ed.ysym){ this.remFetchPrice(ed.ysym, ed.cur); }
   },
   openChart(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; this.CHART={id, range:"1mo", rendered:""}; this.renderPortfolio(); this.loadChart(); const z=$("chartzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },

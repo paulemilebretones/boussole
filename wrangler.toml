@@ -8,6 +8,7 @@ main = "worker.js"
 directory = "."
 binding = "ASSETS"
 
-# Tache quotidienne : envoie les rappels d'achat par notification a 7h UTC (~9h Paris).
+# Toutes les heures : verifie les alertes de prix et envoie les notifs.
+# Les rappels d'achat ne partent qu'a 7h UTC (~9h Paris), filtre dans le handler scheduled.
 [triggers]
-crons = ["0 7 * * *"]
+crons = ["0 * * * *"]
