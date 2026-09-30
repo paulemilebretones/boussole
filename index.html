@@ -333,6 +333,7 @@ const $ = id => document.getElementById(id);
 /* ================= BILINGUE FR/EN ================= */
 const I18N = {"Connexion": "Login", "Créer un compte": "Sign up", "Tous tes investissements au même endroit : PEA, actions, ETF, Bitcoin, or.": "All your investments in one place: PEA, stocks, ETFs, Bitcoin, gold.", "Email, pseudo ou téléphone": "Email, username or phone", "Mot de passe": "Password", "voir": "show", "cacher": "hide", "Se souvenir de moi sur cet appareil": "Remember me on this device", "Se connecter": "Log in", "🙂 Se connecter avec Face ID": "🙂 Log in with Face ID", "Prénom": "First name", "Nom": "Last name", "Pseudo": "Username", "modifiable plus tard": "editable later", "Date de naissance": "Date of birth", "Email": "Email", "Téléphone": "Phone", "(facultatif, pour se connecter avec)": "(optional, to log in with)", "Confirmer le mot de passe": "Confirm password", "au moins 8 caractères": "at least 8 characters", "Activer Face ID": "Enable Face ID", "(proposé après ta première connexion)": "(offered after your first login)", "Créer mon compte": "Create my account", "Ton mot de passe est stocké": "Your password is stored", "haché": "hashed", "(bcrypt) : personne, même pas nous, ne peut le lire. Tes données ne servent qu'à ton suivi perso.": "(bcrypt): nobody, not even us, can read it. Your data is only for your own tracking.", "Application verrouillée": "App locked", "🙂 Déverrouiller avec Face ID": "🙂 Unlock with Face ID", "Code": "Code", "Déverrouiller": "Unlock", "Utiliser le mot de passe": "Use password", "Déconnexion": "Log out", "↻ cours €/$": "↻ EUR/USD rate", "Portefeuille": "Portfolio", "Marché": "Market", "Profil": "Profile", "Sauvegarde…": "Saving…", "✓ Sauvegardé": "✓ Saved", "⚠ non sauvegardé": "⚠ not saved", "Mon portefeuille": "My portfolio", "↻ Cours": "↻ Prices", "+ Ajouter": "+ Add", "Valeur totale": "Total value", "Actions": "Stocks", "Or": "Gold", "Autre / cash": "Other / cash", "Position": "Position", "Enveloppe": "Envelope", "Qté": "Qty", "Prix d'achat": "Buy price", "Prix actuel": "Current price", "Valeur (€)": "Value (€)", "Par enveloppe (PEA, CTO, crypto…)": "By envelope (PEA, CTO, crypto…)", "Ton portefeuille est vide.": "Your portfolio is empty.", "Ajoute ta première ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».": "Add your first line (PEA, stock, ETF, Bitcoin, gold…) with « + Add ».", "Sauvegarde automatique sur ton compte. Bouton": "Automatic save to your account. Button", "pour rafraîchir les prix ; clique le nom d'une ligne pour son graphique.": "to refresh prices; click a line's name for its chart.", "Nouvelle position": "New position", "Modifier la position": "Edit position", "Classe": "Class", "Devise": "Currency", "€ Euro": "€ Euro", "$ Dollar": "$ Dollar", "Ticker (option)": "Ticker (optional)", "Quantité": "Quantity", "Prix d'achat (devise choisie)": "Buy price (chosen currency)", "Symbole de cotation": "Quote symbol", "(pour les cours et le graphique en direct)": "(for live prices and chart)", "Ajouter": "Add", "Enregistrer": "Save", "Annuler": "Cancel", "Assurance-vie": "Life insurance", "Plateforme crypto": "Crypto platform", "Cold wallet": "Cold wallet", "Livret / cash": "Savings / cash", "Autre": "Other", "↻ Actualiser": "↻ Refresh", "Chargement des indicateurs en direct…": "Loading live indicators…", "Fear & Greed (crypto)": "Fear & Greed (crypto)", "Indice public (alternative.me), informatif.": "Public index (alternative.me), for information.", "Peur extrême": "Extreme fear", "Peur": "Fear", "Neutre": "Neutral", "Avidité": "Greed", "Avidité extrême": "Extreme greed", "Marché crypto global": "Global crypto market", "Cryptos tendance (recherches)": "Trending cryptos (searches)", "Indicateurs publics à titre informatif. Aucun conseil d'achat ou de vente.": "Public indicators, for information only. No buy or sell advice.", "Pseudo (modifiable)": "Username (editable)", "Téléphone (modifiable, sert à se connecter)": "Phone (editable, used to log in)", "Tes données sont sauvegardées sur ton compte. Déconnexion en haut à droite.": "Your data is saved to your account. Log out at the top right.", "Verrouillage sur cet appareil": "Lock on this device", "Protège l'ouverture de l'appli sur ce téléphone avec Face ID (ou un code). Ton mot de passe reste le moyen de secours.": "Protect opening the app on this phone with Face ID (or a code). Your password stays the fallback.", "Activer Face ID / Touch ID": "Enable Face ID / Touch ID", "Définir un code": "Set a code", "Désactiver": "Disable", "Mes données": "My data", "Exporter mes données": "Export my data", "Importer un fichier": "Import a file", "Chargement…": "Loading…", "Fermer": "Close", "Argent": "Silver", "Cuivre": "Copper", "Bronze": "Bronze", "Cash": "Cash", "Autre": "Other", "Once (~31 g)": "Ounce (~31 g)", "Gramme": "Gram", "Kilo": "Kilo", "Livre (~454 g)": "Pound (~454 g)", "Montant (ce que tu as)": "Amount (what you have)", "Unité": "Unit", "(pour les métaux)": "(for metals)", "Coins": "Coins", "Métaux": "Metals", "Actif": "Asset", "Maison / immo": "House / property", "Montre": "Watch", "Bourse": "Stocks", "Matières": "Commodities", "Pétrole WTI": "WTI oil", "Pétrole Brent": "Brent oil", "Gaz naturel": "Natural gas", "← Retour": "← Back", "indisponible": "unavailable", "Clique un marché pour son graphique. Données informatives, aucun conseil.": "Click a market for its chart. Informational data, no advice."};
 Object.assign(I18N, {
+  "Retraite":"Retirement", "À venir":"Coming soon",
   "Rappels":"Reminders", "Rappels d'achat":"Buy reminders", "Ajouter un rappel":"Add a reminder", "Modifier le rappel":"Edit reminder",
   "Quoi acheter":"What to buy", "(nom libre)":"(free text)", "Combien":"How much", "Jour du mois":"Day of the month", "(1 à 28)":"(1 to 28)",
   "Note":"Note", "(facultatif)":"(optional)", "Ajouter le rappel":"Add the reminder",
@@ -480,7 +481,25 @@ const ORDER=["action","crypto","etf","or","argent","cuivre","bronze","maison","m
 const METALS={ or:{sym:"GC=F",gpu:31.1034768}, argent:{sym:"SI=F",gpu:31.1034768}, cuivre:{sym:"HG=F",gpu:453.59237} };
 const METALCLS=new Set(["or","argent","cuivre","bronze"]);
 function gramsPerUnit(u){ return ({once:31.1034768, gramme:1, kg:1000, livre:453.59237})[u||"once"]||31.1034768; }
-const ENVS=["PEA","PEA-PME","CTO","Assurance-vie","PER","Livret A","LDDS","Plateforme crypto","Cold wallet","Livret / cash","Autre"];
+const ENV_GROUPS=[
+  ["Comptes-titres",["PEA","PEA-PME","CTO"]],
+  ["Retraite France",["PER","PER individuel","Assurance-vie","Madelin","PERP","Article 83","PREFON","PERCO / PERECO"]],
+  ["Retraite USA",["401(k)","Roth 401(k)","IRA","Roth IRA","403(b)"]],
+  ["Retraite étranger",["Pension (étranger)","Retraite (étranger)"]],
+  ["Crypto",["Plateforme crypto","Cold wallet"]],
+  ["Épargne",["Livret A","LDDS","Livret / cash"]],
+  ["Autre",["Autre"]]
+];
+const ENVS=ENV_GROUPS.reduce((a,g)=>a.concat(g[1]),[]);
+const RETRAITE_ENVS=new Set([].concat(
+  ENV_GROUPS.find(g=>g[0]==="Retraite France")[1],
+  ENV_GROUPS.find(g=>g[0]==="Retraite USA")[1],
+  ENV_GROUPS.find(g=>g[0]==="Retraite étranger")[1]
+));
+// Fonction Retraite verrouillee (Coming soon) : passer a false pour l'ouvrir. Une fois ouverte,
+// le menu propose les enveloppes retraite et la section devient fonctionnelle.
+const RETRAITE_LOCKED=true;
+const RETRAITE_GROUPS=new Set(["Retraite France","Retraite USA","Retraite étranger"]);
 const PEA_SUFFIX=new Set(["PA","AS","BR","DE","F","MU","SG","HM","HA","DU","BE","STU","MI","MC","LS","VI","HE","ST","CO","OL","IC","IR","AT","PR","WA","BD","RG","TL","VS"]);
 function peaEligibleStock(ysym){ const s=String(ysym||"").trim(); const dot=s.lastIndexOf("."); if(dot<0) return false; return PEA_SUFFIX.has(s.slice(dot+1).toUpperCase()); }
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -656,6 +675,28 @@ const App = {
     const up=events.filter(e=>e.t>now-86400).sort((a,b)=>a.t-b.t).slice(0,6).map(e=>`<div class="tgttop" style="padding:5px 0"><span class="mut" style="font-size:12.5px">${e.type} · ${esc(e.name)}</span><span class="mono mut" style="font-size:12px">${new Date(e.t*1000).toLocaleDateString(LANG==="en"?"en-US":"fr-FR",{day:"2-digit",month:"short",year:"2-digit"})}</span></div>`).join("");
     box2.innerHTML=`<div class="card"><div class="mlab" style="margin-bottom:10px">Dividendes estimés</div><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px"><div><div class="mut" style="font-size:11px">Revenu annuel estimé</div><div style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(total)}</div></div><div><div class="mut" style="font-size:11px">Rendement du portefeuille</div><div style="font-size:22px;font-weight:700">${yPort.toFixed(2)} %</div></div></div>${rowsH}${up?`<div class="mlab" style="margin:14px 0 6px">Prochains versements</div>${up}`:""}<div class="mut" style="font-size:11px;margin-top:10px">Estimation d'après les dividendes annuels publiés (Yahoo). À titre informatif, non garanti.</div></div>`;
   },
+  retraiteCard(){
+    if(RETRAITE_LOCKED){
+      return `<div class="card" style="position:relative;opacity:.9"><div class="viewhead" style="margin-bottom:6px"><div class="mlab" style="display:flex;align-items:center;gap:7px"><span style="font-size:15px">🔒</span> Retraite</div><div class="grow"></div><span class="pill" style="background:var(--surface2);color:var(--muted)">Coming soon</span></div>
+      <div class="mut" style="font-size:12.5px">Le suivi de tes comptes retraite (France, USA, étranger) : PER, assurance-vie, Madelin, 401(k), IRA, Roth IRA, pensions étrangères… arrive bientôt. Cette section sera accessible prochainement.</div></div>`;
+    }
+    const inRet=this.S.positions.filter(p=>RETRAITE_ENVS.has(p.env) && this.toEur((+p.qty||0)*(+p.price||0),p.cur)>0);
+    const badge=`<span class="pill" style="background:var(--accent);color:#0C1120">À venir</span>`;
+    if(!inRet.length){
+      return `<div class="card" style="opacity:.92"><div class="viewhead" style="margin-bottom:6px"><div class="mlab">Retraite</div><div class="grow"></div>${badge}</div>
+      <div class="mut" style="font-size:12.5px">Regroupera ici tes comptes retraite (France, USA ou étranger) : PER, assurance-vie, Madelin, 401(k), IRA, Roth IRA, pensions étrangères… avec leur total et leur part de ton patrimoine. Ajoute une ligne et choisis une enveloppe « Retraite » pour l'activer.</div></div>`;
+    }
+    const t=this.totals();
+    const val=inRet.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.price||0),p.cur),0);
+    const pc=t.val?val/t.val*100:0;
+    const cost=inRet.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.pru||0),p.cur),0), pnl=val-cost;
+    const be={}; for(const p of inRet){ be[p.env]=(be[p.env]||0)+this.toEur((+p.qty||0)*(+p.price||0),p.cur); }
+    const bars=Object.keys(be).map(e=>({e,v:be[e]})).sort((a,b)=>b.v-a.v).map(x=>{ const p2=val?x.v/val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${p2.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${p2}%"></div></div></div>`; }).join("");
+    return `<div class="card"><div class="viewhead" style="margin-bottom:6px"><div class="mlab">Retraite</div><div class="grow"></div><div class="mono" style="font-weight:700;font-size:18px">${this.fmtDisp(val)}</div></div>
+      <div class="mut" style="font-size:12px;margin-bottom:12px">${pc.toFixed(0)} % de ton patrimoine suivi${cost>0?` · <span class="${pnl>=0?'up':'down'}" style="font-weight:600">${pnl>=0?'+':''}${this.fmtDisp(pnl)}</span> vs versements`:""}. PER, assurance-vie, 401(k)/IRA, pensions étrangères… regroupés ici.</div>
+      ${bars}
+      <div class="mut" style="font-size:11px;margin-top:10px">Choisis l'enveloppe « Retraite » (France, USA ou étranger) en ajoutant une ligne pour qu'elle apparaisse ici. Un compte sans cotation (fonds, pension) se saisit en « Autre / cash » avec son montant.</div></div>`;
+  },
   targetsCard(){
     const t=this.totals(); if(t.val<=0) return "";
     const held=ORDER.filter(k=>(t.byCls[k]||0)>0), tg=this.S.targets||{};
@@ -828,6 +869,7 @@ const App = {
         ${has?`<div class="tablewrap"><table class="list"><thead><tr><th>Position</th><th>Enveloppe</th><th class="num">Qté</th><th class="num">Prix d'achat</th><th class="num">Prix actuel</th><th class="num">Valeur (€)</th><th class="num">+/-</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
           :`<div class="empty"><div class="big">🧭</div>Ton portefeuille est vide.<br><span class="mut">Ajoute ta première ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».</span></div>`}
       </div>
+      ${has?this.retraiteCard():""}
       ${has?this.targetsCard():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div id="divbox"></div>
@@ -850,7 +892,7 @@ const App = {
         <div class="field"><label>Ticker <span class="mut" style="font-weight:400">(code court de la valeur, ex : MC, BTC - facultatif)</span></label><input id="f-ticker" value="${esc(p.ticker||"")}" placeholder="MC, BTC…"></div>
       </div>
       <div class="frow c4">
-        <div class="field"><label>Enveloppe <span class="mut" style="font-weight:400">(type de compte)</span></label><select id="f-env" onchange="App.checkPea()">${ENVS.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</select><div id="f-peawarn" style="display:none;font-size:11.5px;color:var(--loss);margin-top:4px"></div></div>
+        <div class="field"><label>Enveloppe <span class="mut" style="font-weight:400">(type de compte)</span></label><select id="f-env" onchange="App.checkPea()">${(p.env && !ENVS.includes(p.env))?`<optgroup label="Actuel"><option selected>${esc(p.env)}</option></optgroup>`:""}${ENV_GROUPS.filter(([g])=>!(RETRAITE_LOCKED&&RETRAITE_GROUPS.has(g))).map(([g,opts])=>`<optgroup label="${g}">${opts.map(e=>`<option ${p.env===e?"selected":""}>${e}</option>`).join("")}</optgroup>`).join("")}</select><div id="f-peawarn" style="display:none;font-size:11.5px;color:var(--loss);margin-top:4px"></div></div>
         <div class="field"><label>Quantité</label><input id="f-qty" inputmode="decimal" value="${esc(p.qty)}"></div>
         <div class="field"><label>Prix d'achat <span class="mut" style="font-weight:400">(par unité - une estimation suffit)</span></label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}" placeholder="Ex : ton prix d'achat, même approximatif"></div>
         <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
