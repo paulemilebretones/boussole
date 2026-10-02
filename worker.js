@@ -178,12 +178,17 @@ async function runDailyReminders(env){
   }
 }
 
-async function sendAlertPush(sub, a, price, kind, vapidPriv, subject){
+async function sendAlertPush(sub, a, price, kind, vapidPriv, subject, ext){
   const u=a.cur==="USD"?" $":" EUR";
   const pf=(Math.round(price*100)/100)+u, thr=a.price+u;
-  const cond=a.dir==="below"?"sous":"au-dessus de";
-  const title=kind==="atteint"?("Alerte atteinte : "+a.name):("Alerte proche : "+a.name);
-  const body=kind==="atteint"?(a.name+" est "+cond+" "+thr+" (cours "+pf+")"):(a.name+" s'approche de "+thr+" (cours "+pf+")");
+  const below=a.dir==="below", cond=below?"sous":"au-dessus de";
+  let title, body;
+  if(kind==="atteint"){ title="Alerte atteinte : "+a.name; body=a.name+" est "+cond+" "+thr+" (cours "+pf+")"; }
+  else if(kind==="proche"){ title="Alerte proche : "+a.name; body=a.name+" s'approche de "+thr+" (cours "+pf+")"; }
+  else { const ex=(Math.round((ext||price)*100)/100)+u;
+    title="Retournement : "+a.name;
+    body=below ? (a.name+" descendait vers "+thr+", a touché "+ex+" au plus bas et repart à la hausse (cours "+pf+").")
+               : (a.name+" montait vers "+thr+", a culminé à "+ex+" et repart à la baisse (cours "+pf+")."); }
   try{ await _sendPush(sub, JSON.stringify({title, body, url:"/"}), vapidPriv, subject); }catch(_){}
 }
 async function runPriceAlerts(env){
@@ -192,23 +197,30 @@ async function runPriceAlerts(env){
   if(!KEY || !VAPID_PRIV) return;
   let rows=[]; try{ const r=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok) rows=await r.json(); else return; }catch(_){ return; }
   const need=new Set();
-  for(const row of rows){ const al=row&&row.data&&row.data.alerts; if(Array.isArray(al)) for(const a of al){ if(a&&a.ysym&&a.price>0&&a.lastFired!=="atteint") need.add(a.ysym); } }
+  for(const row of rows){ const al=row&&row.data&&row.data.alerts; if(Array.isArray(al)) for(const a of al){ if(a&&a.ysym&&a.price>0&&!a.done) need.add(a.ysym); } }
   if(!need.size) return;
   const price={};
   for(const s of need){ try{ const q=await chart(s,"1d"); if(q&&q.price>0) price[s]=q.price; }catch(_){} }
-  const PROX=0.02;
+  const PROX=0.02, REV=0.03;
   for(const row of rows){
     const data=row&&row.data; if(!data) continue;
     const sub=data.pushSub, al=data.alerts;
     if(!sub||!sub.endpoint||!Array.isArray(al)) continue;
     let changed=false;
     for(const a of al){
-      if(!a||!a.ysym||!(a.price>0)) continue;
+      if(!a||!a.ysym||!(a.price>0)||a.done) continue;
       const p=price[a.ysym]; if(!(p>0)) continue;
-      const reached=a.dir==="below"?(p<=a.price):(p>=a.price);
-      const close=a.dir==="below"?(p<=a.price*(1+PROX)):(p>=a.price*(1-PROX));
+      const below=a.dir==="below";
+      const reached=below?(p<=a.price):(p>=a.price);
+      const close=below?(p<=a.price*(1+PROX)):(p>=a.price*(1-PROX));
+      // Des que ca s'approche/atteint, on "arme" et on suit l'extreme (pic pour above, creux pour below).
+      if(close||reached) a.armed=true;
+      if(a.armed){ const ne=(a.ext>0)?(below?Math.min(a.ext,p):Math.max(a.ext,p)):p; if(ne!==a.ext){ a.ext=ne; changed=true; } }
       if(reached && a.lastFired!=="atteint"){ await sendAlertPush(sub,a,p,"atteint",VAPID_PRIV,SUBJECT); a.lastFired="atteint"; changed=true; }
-      else if(close && !reached && a.lastFired!=="proche" && a.lastFired!=="atteint"){ await sendAlertPush(sub,a,p,"proche",VAPID_PRIV,SUBJECT); a.lastFired="proche"; changed=true; }
+      else if(close && !reached && a.lastFired===""){ await sendAlertPush(sub,a,p,"proche",VAPID_PRIV,SUBJECT); a.lastFired="proche"; changed=true; }
+      // Retournement : apres s'etre approche, le cours s'eloigne nettement (3 %) de son extreme -> ca repart dans l'autre sens.
+      if(a.armed && a.ext>0){ const rev=below?(p>=a.ext*(1+REV)):(p<=a.ext*(1-REV));
+        if(rev){ await sendAlertPush(sub,a,p,"retournement",VAPID_PRIV,SUBJECT,a.ext); a.lastFired="retournement"; a.done=true; changed=true; } }
     }
     if(changed){ try{ await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(row.user_id),{method:"PATCH",headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data})}); }catch(_){} }
   }
