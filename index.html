@@ -553,7 +553,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[]}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -567,7 +567,7 @@ const App = {
   async load(){
     try{ const { data, error } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
       const row = data && data[0];
-      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; } }catch(e){}
+      if(!error && row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; } }catch(e){}
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -581,7 +581,7 @@ const App = {
     setBadge("pending"); clearTimeout(this.saveTimer);
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, savedAt:Date.now()};
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -661,19 +661,26 @@ const App = {
     const syms=Array.from(new Set(holds.map(p=>this.ysym(p))));
     const sm={};
     await Promise.all(syms.map(async s=>{ try{ sm[s]=await Market.cfetch(RELAIS+"?stats="+encodeURIComponent(s),600000); }catch(_){} }));
-    let total=0; const rows=[], events=[];
-    for(const p of holds){ const s=sm[this.ysym(p)]; if(!s||s.error||!(s.divRate>0)) continue;
-      const dcur=s.currency==="USD"?"USD":"EUR", inc=this.toEur(s.divRate*(+p.qty), dcur);
-      total+=inc; rows.push({name:p.name, income:inc, yld:s.divYield});
-      if(s.divDate) events.push({name:p.name, t:s.divDate, type:"Versement"}); else if(s.exDiv) events.push({name:p.name, t:s.exDiv, type:"Détachement"});
+    let total=0; const rows=[]; const divMap={};
+    for(const p of holds){ const ys=this.ysym(p), s=sm[ys]; if(!s||s.error) continue;
+      const dcur=s.currency==="USD"?"USD":"EUR";
+      if(s.divRate>0 || s.exDiv || s.divDate){
+        divMap[ys]={name:p.name, rate:s.divRate||0, yld:s.divYield||0, cur:dcur, exDiv:s.exDiv||0, divDate:s.divDate||0, at:Date.now()};
+      }
+      if(!(s.divRate>0)) continue;
+      const inc=this.toEur(s.divRate*(+p.qty), dcur);
+      total+=inc; rows.push({name:p.name, income:inc, yld:s.divYield, exDiv:s.exDiv||0, divDate:s.divDate||0, rate:s.divRate, cur:dcur});
     }
+    // Enregistre les dates de dividendes dans la base (seulement si elles ont change).
+    if(JSON.stringify(this.S.dividends||{})!==JSON.stringify(divMap)){ this.S.dividends=divMap; this.save(); }
     const box2=$("divbox"); if(!box2) return;
     if(!rows.length){ box2.innerHTML=""; return; }
     const t=this.totals(), yPort=t.val?total/t.val*100:0; rows.sort((a,b)=>b.income-a.income);
-    const rowsH=rows.map(r=>`<div class="tgttop" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(r.name)}${r.yld?` <span class="mut" style="font-size:11px">${(r.yld*100).toFixed(1)} %</span>`:""}</span><span class="mono">${this.fmtDisp(r.income)} <span class="mut" style="font-size:11px">/an</span></span></div>`).join("");
+    const fmtD=tt=> tt?new Date(tt*1000).toLocaleDateString(LANG==="en"?"en-US":"fr-FR",{day:"2-digit",month:"short",year:"2-digit"}):"—";
     const now=Date.now()/1000;
-    const up=events.filter(e=>e.t>now-86400).sort((a,b)=>a.t-b.t).slice(0,6).map(e=>`<div class="tgttop" style="padding:5px 0"><span class="mut" style="font-size:12.5px">${e.type} · ${esc(e.name)}</span><span class="mono mut" style="font-size:12px">${new Date(e.t*1000).toLocaleDateString(LANG==="en"?"en-US":"fr-FR",{day:"2-digit",month:"short",year:"2-digit"})}</span></div>`).join("");
-    box2.innerHTML=`<div class="card"><div class="mlab" style="margin-bottom:10px">Dividendes estimés</div><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px"><div><div class="mut" style="font-size:11px">Revenu annuel estimé</div><div style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(total)}</div></div><div><div class="mut" style="font-size:11px">Rendement du portefeuille</div><div style="font-size:22px;font-weight:700">${yPort.toFixed(2)} %</div></div></div>${rowsH}${up?`<div class="mlab" style="margin:14px 0 6px">Prochains versements</div>${up}`:""}<div class="mut" style="font-size:11px;margin-top:10px">Estimation d'après les dividendes annuels publiés (Yahoo). À titre informatif, non garanti.</div></div>`;
+    const rowsH=rows.map(r=>{ const past=r.exDiv && r.exDiv<now-86400; const soon=r.exDiv && r.exDiv>=now-86400; const lab=past?"Dernier détachement":"Détachement"; const dates=(r.exDiv||r.divDate)?`<div class="mut" style="font-size:11.5px;margin-top:3px">${lab} : <b style="color:var(--ink)">${fmtD(r.exDiv)}</b>${(r.divDate&&!past)?` · Versement : <b style="color:var(--ink)">${fmtD(r.divDate)}</b>`:""}${soon?` <span class="rembadge due" style="margin-left:4px">à venir</span>`:""}</div>`:`<div class="mut" style="font-size:11.5px;margin-top:3px">Prochaine date non publiée</div>`;
+      return `<div style="padding:9px 0;border-bottom:1px solid var(--line)"><div class="tgttop"><span>${esc(r.name)}${r.yld?` <span class="mut" style="font-size:11px">${(r.yld*100).toFixed(1)} %</span>`:""}</span><span class="mono">${this.fmtDisp(r.income)} <span class="mut" style="font-size:11px">/an</span></span></div>${dates}</div>`; }).join("");
+    box2.innerHTML=`<div class="card"><div class="mlab" style="margin-bottom:10px">Dividendes et dates</div><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px"><div><div class="mut" style="font-size:11px">Revenu annuel estimé</div><div style="font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(total)}</div></div><div><div class="mut" style="font-size:11px">Rendement du portefeuille</div><div style="font-size:22px;font-weight:700">${yPort.toFixed(2)} %</div></div></div>${rowsH}<div class="mut" style="font-size:11px;margin-top:10px">Détachement = dernier jour pour détenir l'action et toucher le dividende. Dates et montants publiés par Yahoo, enregistrés dans ta base ; à titre informatif, non garantis.</div></div>`;
   },
   retraiteCard(){
     if(RETRAITE_LOCKED){
