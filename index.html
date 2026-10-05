@@ -727,7 +727,7 @@ const App = {
     const t=this.totals();
     const val=inRet.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.price||0),p.cur),0);
     const pc=t.val?val/t.val*100:0;
-    const cost=inRet.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.pru||0),p.cur),0), pnl=val-cost;
+    const cost=inRet.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.pru||0)+(+p.fees||0),p.cur),0), pnl=val-cost;
     const be={}; for(const p of inRet){ be[p.env]=(be[p.env]||0)+this.toEur((+p.qty||0)*(+p.price||0),p.cur); }
     const bars=Object.keys(be).map(e=>({e,v:be[e]})).sort((a,b)=>b.v-a.v).map(x=>{ const p2=val?x.v/val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${p2.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${p2}%"></div></div></div>`; }).join("");
     return `<div class="card"><div class="viewhead" style="margin-bottom:6px"><div class="mlab">Retraite</div><div class="grow"></div><div class="mono" style="font-weight:700;font-size:18px">${this.fmtDisp(val)}</div></div>
@@ -802,7 +802,7 @@ const App = {
     return `<div style="display:flex; align-items:flex-start; gap:18px; flex-wrap:wrap">${pie2(shown,total)}<div style="display:flex;flex-direction:column;gap:7px;min-width:150px"><div class="pgroup">${byBtns}</div>${legend}${Object.keys(off).some(k=>off[k])?`<span class="mut" style="font-size:11px;cursor:pointer" onclick="App.pieOff={};App.render()">↺ tout réafficher</span>`:""}</div></div>`;
   },
   toEur(v,cur){ return cur==="USD" ? v/(this.S.rate||1.16) : v; },
-  totals(){ let val=0,cost=0; const byCls={}; for(const p of this.S.positions){ const q=+p.qty||0; const ve=this.toEur(q*(+p.price||0),p.cur); val+=ve; cost+=this.toEur(q*(+p.pru||0),p.cur); byCls[p.cls]=(byCls[p.cls]||0)+ve; } return {val,cost,pnl:val-cost,byCls}; },
+  totals(){ let val=0,cost=0; const byCls={}; for(const p of this.S.positions){ const q=+p.qty||0; const ve=this.toEur(q*(+p.price||0),p.cur); val+=ve; cost+=this.toEur(q*(+p.pru||0)+(+p.fees||0),p.cur); byCls[p.cls]=(byCls[p.cls]||0)+ve; } return {val,cost,pnl:val-cost,byCls}; },
   go(t){
     this.tab=t; this.FORM=null;
     const nav=$("apptabs"); if(nav) for(const b of nav.children) b.setAttribute("aria-selected", b.dataset.tab===t);
@@ -873,7 +873,7 @@ const App = {
       const list=this.S.positions.filter(p=>p.cls===k); if(!list.length) continue;
       const sub=list.reduce((s,p)=>s+this.toEur((+p.qty||0)*(+p.price||0),p.cur),0);
       rows+=`<tr class="grouphead"><td colspan="8"><span class="sw" style="background:${CLS[k].c}"></span>${CLS[k].l}<span style="float:right;font-family:'JetBrains Mono',monospace">${eurF.format(sub)}</span></td></tr>`;
-      rows+=list.map(p=>{ const q=+p.qty||0, ve=this.toEur(q*(+p.price||0),p.cur), ce=this.toEur(q*(+p.pru||0),p.cur), pnl=ve-ce, pct=ce>0?pnl/ce*100:0, cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v);
+      rows+=list.map(p=>{ const q=+p.qty||0, ve=this.toEur(q*(+p.price||0),p.cur), ce=this.toEur(q*(+p.pru||0)+(+p.fees||0),p.cur), pnl=ve-ce, pct=ce>0?pnl/ce*100:0, cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v);
         return `<tr>
           <td><b class="lnk" onclick="App.openChart('${p.id}')">${esc(p.name)}</b>${p.ticker?` <span class="mut">${esc(p.ticker)}</span>`:""}</td>
           <td><span class="pill">${esc(p.env||"")}</span></td>
@@ -937,6 +937,7 @@ const App = {
         <div class="field"><label>Prix d'achat <span class="mut" style="font-weight:400">(par unité - une estimation suffit)</span></label><input id="f-pru" inputmode="decimal" value="${esc(p.pru)}" placeholder="Ex : ton prix d'achat, même approximatif"></div>
         <div class="field"><label>Prix actuel</label><input id="f-price" inputmode="decimal" value="${esc(p.price)}" onkeydown="if(event.key==='Enter')App.savePos()"></div>
       </div>
+      <div class="field"><label>Frais d'achat <span class="mut" style="font-weight:400">(total : courtage / commission - facultatif, séparé du prix)</span></label><input id="f-fees" inputmode="decimal" value="${esc(p.fees!=null?p.fees:'')}" placeholder="Ex : 1 (commission totale payée)"></div>
       <div class="field"><label>Symbole de cotation <span class="mut" style="font-weight:400">(rempli tout seul par la recherche ci-dessus - à modifier seulement si besoin)</span></label><input id="f-ysym" value="${esc(p.ysym||"")}" placeholder="Se remplit quand tu choisis une valeur dans la recherche"></div>
       <div class="field"><label>Provenance <span class="mut" style="font-weight:400">(où tu l'as acheté / eu - facultatif)</span></label><input id="f-source" value="${esc(p.source||"")}" placeholder="Ex : Trade Republic, PEA Boursorama, offert, boutique…"></div>
       <div class="field" id="unit-field" style="display:none"><label>Unité <span class="mut" style="font-weight:400">(pour les métaux)</span></label><select id="f-unit"><option value="once" ${(p.unit||"once")==="once"?"selected":""}>Once (~31 g)</option><option value="gramme" ${p.unit==="gramme"?"selected":""}>Gramme</option><option value="kg" ${p.unit==="kg"?"selected":""}>Kilo</option><option value="livre" ${p.unit==="livre"?"selected":""}>Livre (~454 g)</option></select></div>
@@ -1012,7 +1013,7 @@ const App = {
     const g=id=>$(id).value, num=v=>parseFloat(String(v).replace(",",".").replace(/\s/g,""))||0;
     const name=g("f-name").trim(); if(!name){ alert("Donne un nom a la position."); return; }
     const cls=g("f-cls"), price=num(g("f-price"));
-    const data={cls,cur:g("f-cur")==="USD"?"USD":"EUR",name,ticker:g("f-ticker").trim(),ysym:g("f-ysym").trim(),unit:($("f-unit")?g("f-unit"):"once"),env:g("f-env"),qty:cls==="cash"?1:num(g("f-qty")),pru:cls==="cash"?price:num(g("f-pru")),price,source:($("f-source")?g("f-source").trim():"")};
+    const data={cls,cur:g("f-cur")==="USD"?"USD":"EUR",name,ticker:g("f-ticker").trim(),ysym:g("f-ysym").trim(),unit:($("f-unit")?g("f-unit"):"once"),env:g("f-env"),qty:cls==="cash"?1:num(g("f-qty")),pru:cls==="cash"?price:num(g("f-pru")),price,source:($("f-source")?g("f-source").trim():""),fees:($("f-fees")?num(g("f-fees")):0)};
     if(cls==="action" && data.env==="PEA" && data.ysym && !peaEligibleStock(data.ysym)){
       if(!confirm("Cette action semble hors Union européenne : normalement elle n'est PAS éligible au PEA (réservé aux actions de l'UE/EEE). Un compte-titres (CTO) convient. L'ajouter quand même en PEA ?")) return;
     }
@@ -1026,11 +1027,11 @@ const App = {
         const cf=v=>data.cur==="USD"?usdF.format(v):eurF.format(v);
         if(confirm(`Tu detiens deja ${q1.toLocaleString("fr-FR",{maximumFractionDigits:8})} ${twin.name} dans ${twin.env||"cette enveloppe"}.\n\nJ'additionne : ${Q.toLocaleString("fr-FR",{maximumFractionDigits:8})} au total, prix d'achat moyen ${cf(npru)} (au lieu de creer une 2e ligne).\n\nOK pour fusionner ? (Annuler = garder une ligne separee)`)){
           const today=new Date().toISOString().slice(0,10);
-          if(!Array.isArray(twin.lots)) twin.lots=[{qty:q1,pru:pru1,date:twin.buyDate||"",source:twin.source||""}]; // 1er achat existant
-          twin.lots.push({qty:q2,pru:pru2,date:today,source:data.source||""}); // nouvel achat
-          twin.qty=Q; twin.pru=npru; if(data.price>0) twin.price=data.price; if(dsym && !twin.ysym) twin.ysym=data.ysym; if(data.source && !twin.source) twin.source=data.source;
-        } else { this.S.positions.push({id:uid(),...data, lots:[{qty:data.qty,pru:data.pru,date:new Date().toISOString().slice(0,10),source:data.source||""}]}); }
-      } else { this.S.positions.push({id:uid(),...data, lots:(cls==="cash"?undefined:[{qty:data.qty,pru:data.pru,date:new Date().toISOString().slice(0,10),source:data.source||""}])}); }
+          if(!Array.isArray(twin.lots)) twin.lots=[{qty:q1,pru:pru1,date:twin.buyDate||"",source:twin.source||"",fees:+twin.fees||0}]; // 1er achat existant
+          twin.lots.push({qty:q2,pru:pru2,date:today,source:data.source||"",fees:+data.fees||0}); // nouvel achat
+          twin.qty=Q; twin.pru=npru; twin.fees=(+twin.fees||0)+(+data.fees||0); if(data.price>0) twin.price=data.price; if(dsym && !twin.ysym) twin.ysym=data.ysym; if(data.source && !twin.source) twin.source=data.source;
+        } else { this.S.positions.push({id:uid(),...data, lots:[{qty:data.qty,pru:data.pru,date:new Date().toISOString().slice(0,10),source:data.source||"",fees:+data.fees||0}]}); }
+      } else { this.S.positions.push({id:uid(),...data, lots:(cls==="cash"?undefined:[{qty:data.qty,pru:data.pru,date:new Date().toISOString().slice(0,10),source:data.source||"",fees:+data.fees||0}])}); }
     }
     else { const p=this.S.positions.find(x=>x.id===this.FORM); if(p) Object.assign(p,data); }
     this.FORM=null; this._new=null; this.save(); this.render();
@@ -1211,17 +1212,18 @@ const App = {
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
     return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><h3 style="font-size:17px">${esc(p.name)} <span class="mut" style="font-size:13px">${esc(this.ysym(p)||"?")}</span></h3><div class="grow"></div><button class="rowbtn" title="Fermer" onclick="App.closeChart()">✕</button></div>
       ${p.source?`<div class="mut" style="font-size:12.5px;margin:-4px 0 8px">Provenance : <b style="color:var(--ink)">${esc(p.source)}</b></div>`:""}
+      ${(+p.fees>0)?`<div class="mut" style="font-size:12.5px;margin:-4px 0 8px">Frais d'achat : <b style="color:var(--ink)">${p.cur==="USD"?usdF.format(+p.fees):eurF.format(+p.fees)}</b> <span style="opacity:.7">(inclus dans le +/-)</span></div>`:""}
       <div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.CHART.range===r[0]?' on':''}" onclick="App.chartRange('${r[0]}')">${r[1]}</button>`).join("")}</div>
       <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div>${this.lotsBlock(p)}<div id="pstatsbox"></div>`;
   },
   lotsBlock(p){
     const lots=Array.isArray(p.lots)?p.lots:null; if(!lots||lots.length<2) return "";
     const cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v), qf=q=>(+q||0).toLocaleString("fr-FR",{maximumFractionDigits:8});
-    let tq=0,tc=0;
-    const rows=lots.map((l,i)=>{ const q=+l.qty||0, pr=+l.pru||0, cost=q*pr; tq+=q; tc+=cost;
-      return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>Achat ${i+1}${l.date?` <span class="mut" style="font-size:11px">${esc(l.date)}</span>`:""}${l.source?` <span class="mut" style="font-size:11px">· ${esc(l.source)}</span>`:""}</span><span class="mono" style="font-size:12.5px">${qf(q)} × ${cf(pr)} = ${cf(cost)}</span></div>`; }).join("");
+    let tq=0,tc=0,tf=0;
+    const rows=lots.map((l,i)=>{ const q=+l.qty||0, pr=+l.pru||0, fe=+l.fees||0, cost=q*pr; tq+=q; tc+=cost; tf+=fe;
+      return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>Achat ${i+1}${l.date?` <span class="mut" style="font-size:11px">${esc(l.date)}</span>`:""}${l.source?` <span class="mut" style="font-size:11px">· ${esc(l.source)}</span>`:""}${fe>0?` <span class="mut" style="font-size:11px">· frais ${cf(fe)}</span>`:""}</span><span class="mono" style="font-size:12.5px">${qf(q)} × ${cf(pr)} = ${cf(cost)}</span></div>`; }).join("");
     const avg=tq>0?tc/tq:0;
-    return `<div class="card" style="margin-top:12px"><div class="mlab" style="margin-bottom:8px">Détail de tes achats (${lots.length})</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total</b></span><span class="mono"><b>${qf(tq)} titres · prix moyen ${cf(avg)}</b></span></div></div>`;
+    return `<div class="card" style="margin-top:12px"><div class="mlab" style="margin-bottom:8px">Détail de tes achats (${lots.length})</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total</b></span><span class="mono"><b>${qf(tq)} titres · prix moyen ${cf(avg)}${tf>0?` · frais ${cf(tf)}`:""}</b></span></div>${tf>0?`<div class="mut" style="font-size:11.5px;margin-top:6px">Coût total (achats + frais) : <b style="color:var(--ink)">${cf(tc+tf)}</b></div>`:""}</div>`;
   },
   async loadChart(){
     if(!this.CHART) return; const p=this.S.positions.find(x=>x.id===this.CHART.id); if(!p) return;
