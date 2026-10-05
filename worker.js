@@ -233,25 +233,6 @@ export default {
       if(request.method === "OPTIONS") return new Response("ok", { headers: CORS });
       return cours(url);
     }
-    // TEMPORAIRE : restauration d'un portefeuille (protege par jeton) : POST /api/restore?k=<KEY> body {prefix,data}
-    if(url.pathname === "/api/restore" && request.method==="POST" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
-      try{
-        const body=await request.json();
-        const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY;
-        if(!KEY) return new Response(JSON.stringify({error:"no service key"}),{status:500,headers:{"Content-Type":"application/json"}});
-        const pref=String(body.prefix||"").replace(/[^a-fA-F0-9-]/g,"");
-        if(!pref||!body.data) return new Response(JSON.stringify({error:"prefix/data manquant"}),{status:400,headers:{"Content-Type":"application/json"}});
-        const H={apikey:KEY,Authorization:"Bearer "+KEY};
-        // Retrouve l'UUID complet de la ligne a partir du prefixe (LIKE impossible sur une colonne uuid)
-        const lr=await fetch(SUPA+"/rest/v1/portfolios?select=user_id",{headers:H});
-        const rows=await lr.json(); const target=(Array.isArray(rows)?rows:[]).find(r=>String(r&&r.user_id||"").startsWith(pref));
-        if(!target) return new Response(JSON.stringify({error:"aucune ligne pour ce prefixe", seen:(Array.isArray(rows)?rows.length:0)}),{status:404,headers:{"Content-Type":"application/json"}});
-        const now=new Date().toISOString();
-        const r=await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(target.user_id),{method:"PATCH",headers:{...H,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({data:body.data, updated_at:now})});
-        const txt=await r.text(); let n=0; try{ const j=JSON.parse(txt); n=Array.isArray(j)?j.length:0; }catch(_){}
-        return new Response(JSON.stringify({status:r.status, rowsUpdated:n, pos:((body.data&&body.data.positions)||[]).length}),{headers:{"Content-Type":"application/json"}});
-      }catch(e){ return new Response(JSON.stringify({error:String(e)}),{status:500,headers:{"Content-Type":"application/json"}}); }
-    }
     // Declencheur manuel de test (protege par un jeton) : /api/push-now?k=<PUSH_TEST_KEY>
     if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
       const diag={ran:true};

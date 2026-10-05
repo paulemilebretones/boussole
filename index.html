@@ -570,7 +570,21 @@ const App = {
       if(error) return; // lecture echouee : on garde _loadOK=false, aucune sauvegarde ne partira
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
-      if(row && row.data){ const d=row.data; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; } }catch(e){}
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; }
+      // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
+      try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
+    }catch(e){}
+  },
+  restoreLocalBak(){
+    const b=this._localBak; if(!b||!b.data) return; const d=b.data;
+    if(!confirm("Restaurer la sauvegarde locale de cet appareil ("+((d.positions||[]).length)+" positions) par-dessus l'etat actuel ?")) return;
+    this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:(this.S.snapshots||[]); this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; if(d.rate) this.S.rate=d.rate; if(d.rateGbp) this.S.rateGbp=d.rateGbp; if(d.tdKey) this.S.tdKey=d.tdKey;
+    this._localBak=null; this.save(); this.render();
+  },
+  localBakBanner(){
+    const b=this._localBak; if(!b||!b.data) return "";
+    const lp=(b.data.positions||[]).length, dt=b.at?new Date(b.at).toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+    return `<div class="card" style="border:1px solid #2f81f7;background:rgba(47,129,247,.08);margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>Sauvegarde locale disponible</b><div class="mut" style="font-size:12.5px;margin-top:3px">Cet appareil a une copie de ${lp} position(s)${dt?` (${esc(dt)})`:""}, plus complete que la base en ligne. Tu peux la restaurer.</div></div><button class="btn small" onclick="App.restoreLocalBak()">Restaurer</button></div>`;
   },
   recordSnapshot(){
     if(!this.S.snapshots) this.S.snapshots=[];
@@ -586,6 +600,8 @@ const App = {
       if(!this.userId){ setBadge("err"); return; }
       if(this._loadOK===false){ setBadge("err"); return; } // SECURITE : lecture non confirmee, on n'ecrase JAMAIS la base
       const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, savedAt:Date.now()};
+      // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
+      try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
       try{
         // On MET A JOUR la ligne existante (pas de doublon) ; on n'insere que si aucune ligne.
@@ -861,6 +877,7 @@ const App = {
     $("view").innerHTML=`
       <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div><button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
       ${this.remindersBanner()}
+      ${this.localBakBanner()}
       ${this.dupBanner()}
       <div class="card hero">
         <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
