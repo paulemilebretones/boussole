@@ -857,6 +857,7 @@ const App = {
     $("view").innerHTML=`
       <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div><button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
       ${this.remindersBanner()}
+      ${this.dupBanner()}
       <div class="card hero">
         <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
           <div style="flex:1; min-width:190px">
@@ -982,11 +983,46 @@ const App = {
     if(cls==="action" && data.env==="PEA" && data.ysym && !peaEligibleStock(data.ysym)){
       if(!confirm("Cette action semble hors Union européenne : normalement elle n'est PAS éligible au PEA (réservé aux actions de l'UE/EEE). Un compte-titres (CTO) convient. L'ajouter quand même en PEA ?")) return;
     }
-    if(this.FORM==="new") this.S.positions.push({id:uid(),...data});
+    if(this.FORM==="new"){
+      // Si on detient deja cette valeur dans la meme enveloppe et la meme devise : on ADDITIONNE au lieu de creer une 2e ligne.
+      const dsym=this.ysym(data), dn=(data.name||"").trim().toLowerCase();
+      const twin = cls!=="cash" ? this.S.positions.find(x=> x.cls==="cash"?false : (x.cls===data.cls && (x.env||"")===(data.env||"") && (x.cur||"")===(data.cur||"") && ( (dsym && this.ysym(x)===dsym) || (!dsym && (x.name||"").trim().toLowerCase()===dn) ))) : null;
+      if(twin){
+        const q1=+twin.qty||0, q2=+data.qty||0, Q=q1+q2, pru1=+twin.pru||0, pru2=+data.pru||0;
+        const npru = (pru1>0&&pru2>0)?(q1*pru1+q2*pru2)/Q : (pru2>0?pru2:pru1);
+        const cf=v=>data.cur==="USD"?usdF.format(v):eurF.format(v);
+        if(confirm(`Tu detiens deja ${q1.toLocaleString("fr-FR",{maximumFractionDigits:8})} ${twin.name} dans ${twin.env||"cette enveloppe"}.\n\nJ'additionne : ${Q.toLocaleString("fr-FR",{maximumFractionDigits:8})} au total, prix d'achat moyen ${cf(npru)} (au lieu de creer une 2e ligne).\n\nOK pour fusionner ? (Annuler = garder une ligne separee)`)){
+          twin.qty=Q; twin.pru=npru; if(data.price>0) twin.price=data.price; if(dsym && !twin.ysym) twin.ysym=data.ysym;
+        } else { this.S.positions.push({id:uid(),...data}); }
+      } else { this.S.positions.push({id:uid(),...data}); }
+    }
     else { const p=this.S.positions.find(x=>x.id===this.FORM); if(p) Object.assign(p,data); }
     this.FORM=null; this._new=null; this.save(); this.render();
   },
   delPos(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; if(!confirm(`Supprimer ${p.name} ?`)) return; this.S.positions=this.S.positions.filter(x=>x.id!==id); this.save(); this.render(); },
+  dupGroups(){
+    const groups={};
+    for(const p of this.S.positions){ if(p.cls==="cash") continue; const sym=this.ysym(p); const key=p.cls+"|"+(p.env||"")+"|"+(p.cur||"")+"|"+(sym?("s:"+sym):("n:"+(p.name||"").trim().toLowerCase())); (groups[key]=groups[key]||[]).push(p); }
+    return Object.values(groups).filter(g=>g.length>1);
+  },
+  mergeDuplicates(){
+    const dups=this.dupGroups(); if(!dups.length) return;
+    const n=dups.reduce((s,g)=>s+g.length,0);
+    if(!confirm(`${n} lignes en double detectees (meme valeur, meme enveloppe, meme devise).\n\nElles vont etre fusionnees : quantites additionnees et prix d'achat moyen pondere. Continuer ?`)) return;
+    for(const g of dups){
+      let Q=0, cost=0, price=0; const base=g[0];
+      for(const p of g){ const q=+p.qty||0, pru=+p.pru||0; Q+=q; if(pru>0) cost+=q*pru; if(+p.price>0) price=+p.price; if(!base.ysym && this.ysym(p)) base.ysym=this.ysym(p); }
+      base.qty=Q; base.pru = Q>0 ? cost/Q : (+base.pru||0); if(price>0) base.price=price;
+      const others=g.slice(1).map(p=>p.id);
+      this.S.positions=this.S.positions.filter(p=>others.indexOf(p.id)<0);
+    }
+    this.save(); this.render();
+  },
+  dupBanner(){
+    const dups=this.dupGroups(); if(!dups.length) return "";
+    const names=Array.from(new Set(dups.map(g=>g[0].name))).slice(0,4).join(", ");
+    return `<div class="card" style="border:1px solid #b08900;background:rgba(176,137,0,.08);margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>Lignes en double detectees</b> <span class="mut">(${esc(names)}${dups.length>4?"…":""})</span><div class="mut" style="font-size:12.5px;margin-top:3px">Tu as plusieurs lignes pour une meme valeur dans la meme enveloppe. Je peux les additionner et calculer le prix d'achat moyen.</div></div><button class="btn small" onclick="App.mergeDuplicates()">Fusionner</button></div>`;
+  },
   ysym(p){
     if(p.ysym) return String(p.ysym).trim();
     const t=(p.ticker||"").trim();
