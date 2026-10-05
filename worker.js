@@ -241,8 +241,13 @@ export default {
         if(!KEY) return new Response(JSON.stringify({error:"no service key"}),{status:500,headers:{"Content-Type":"application/json"}});
         const pref=String(body.prefix||"").replace(/[^a-fA-F0-9-]/g,"");
         if(!pref||!body.data) return new Response(JSON.stringify({error:"prefix/data manquant"}),{status:400,headers:{"Content-Type":"application/json"}});
+        const H={apikey:KEY,Authorization:"Bearer "+KEY};
+        // Retrouve l'UUID complet de la ligne a partir du prefixe (LIKE impossible sur une colonne uuid)
+        const lr=await fetch(SUPA+"/rest/v1/portfolios?select=user_id",{headers:H});
+        const rows=await lr.json(); const target=(Array.isArray(rows)?rows:[]).find(r=>String(r&&r.user_id||"").startsWith(pref));
+        if(!target) return new Response(JSON.stringify({error:"aucune ligne pour ce prefixe", seen:(Array.isArray(rows)?rows.length:0)}),{status:404,headers:{"Content-Type":"application/json"}});
         const now=new Date().toISOString();
-        const r=await fetch(SUPA+"/rest/v1/portfolios?user_id=like."+encodeURIComponent(pref+"*"),{method:"PATCH",headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({data:body.data, updated_at:now})});
+        const r=await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(target.user_id),{method:"PATCH",headers:{...H,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({data:body.data, updated_at:now})});
         const txt=await r.text(); let n=0; try{ const j=JSON.parse(txt); n=Array.isArray(j)?j.length:0; }catch(_){}
         return new Response(JSON.stringify({status:r.status, rowsUpdated:n, pos:((body.data&&body.data.positions)||[]).length}),{headers:{"Content-Type":"application/json"}});
       }catch(e){ return new Response(JSON.stringify({error:String(e)}),{status:500,headers:{"Content-Type":"application/json"}}); }
