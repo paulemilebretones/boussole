@@ -233,27 +233,6 @@ export default {
       if(request.method === "OPTIONS") return new Response("ok", { headers: CORS });
       return cours(url);
     }
-    // TEMPORAIRE : restauration/fusion (protege) : POST /api/restore?k=<KEY> body {prefix, merge:{...}} ou {prefix, data:{...}}
-    if(url.pathname === "/api/restore" && request.method==="POST" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
-      try{
-        const body=await request.json();
-        const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY;
-        if(!KEY) return new Response(JSON.stringify({error:"no service key"}),{status:500,headers:{"Content-Type":"application/json"}});
-        const pref=String(body.prefix||"").replace(/[^a-fA-F0-9-]/g,"");
-        if(!pref) return new Response(JSON.stringify({error:"prefix manquant"}),{status:400,headers:{"Content-Type":"application/json"}});
-        const H={apikey:KEY,Authorization:"Bearer "+KEY};
-        const lr=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:H});
-        const rows=await lr.json(); const target=(Array.isArray(rows)?rows:[]).find(r=>String(r&&r.user_id||"").startsWith(pref));
-        if(!target) return new Response(JSON.stringify({error:"aucune ligne", seen:(Array.isArray(rows)?rows.length:0)}),{status:404,headers:{"Content-Type":"application/json"}});
-        let data = (target.data && typeof target.data==="object") ? target.data : {};
-        if(body.data && typeof body.data==="object") data = body.data;
-        if(body.merge && typeof body.merge==="object"){ for(const k of Object.keys(body.merge)) data[k]=body.merge[k]; }
-        const now=new Date().toISOString();
-        const r=await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(target.user_id),{method:"PATCH",headers:{...H,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({data, updated_at:now})});
-        const txt=await r.text(); let n=0; try{ const j=JSON.parse(txt); n=Array.isArray(j)?j.length:0; }catch(_){}
-        return new Response(JSON.stringify({status:r.status, rowsUpdated:n, pos:((data.positions)||[]).length, watch:((data.watch)||[]).length, reminders:((data.reminders)||[]).length, alerts:((data.alerts)||[]).length}),{headers:{"Content-Type":"application/json"}});
-      }catch(e){ return new Response(JSON.stringify({error:String(e)}),{status:500,headers:{"Content-Type":"application/json"}}); }
-    }
     // Declencheur manuel de test (protege par un jeton) : /api/push-now?k=<PUSH_TEST_KEY>
     if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
       const diag={ran:true};
@@ -261,7 +240,7 @@ export default {
       diag.hasServiceKey=!!env.SUPABASE_SERVICE_KEY;
       const wantTest = url.searchParams.get("test")==="1";
       let subs=[];
-      try{ const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY; if(KEY){ const r=await fetch(SUPA+"/rest/v1/portfolios?select=data,updated_at,user_id",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok){ const rows=await r.json(); diag.portfolios=rows.length; subs=rows.map(x=>x&&x.data&&x.data.pushSub).filter(s=>s&&s.endpoint&&s.keys); diag.subscriptions=subs.length; diag.alertsTotal=rows.reduce((n,x)=>n+((x&&x.data&&Array.isArray(x.data.alerts))?x.data.alerts.length:0),0); diag.rowsInfo=rows.map(x=>({user:(x&&x.user_id||"").slice(0,8), upd:x&&x.updated_at, pos:(x&&x.data&&Array.isArray(x.data.positions))?x.data.positions.length:0, snaps:(x&&x.data&&Array.isArray(x.data.snapshots))?x.data.snapshots.length:0, posList:(x&&x.data&&Array.isArray(x.data.positions))?x.data.positions.map(p=>({n:p.name,env:p.env,cls:p.cls,qty:p.qty,pru:p.pru,price:p.price,cur:p.cur,ysym:p.ysym})):[], targets:(x&&x.data&&x.data.targets)||null, watch:(x&&x.data&&Array.isArray(x.data.watch))?x.data.watch.length:0, reminders:(x&&x.data&&Array.isArray(x.data.reminders))?x.data.reminders.length:0})); } else diag.dbStatus=r.status; } }catch(e){ diag.dbError=String(e); }
+      try{ const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY; if(KEY){ const r=await fetch(SUPA+"/rest/v1/portfolios?select=data,updated_at,user_id",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok){ const rows=await r.json(); diag.portfolios=rows.length; subs=rows.map(x=>x&&x.data&&x.data.pushSub).filter(s=>s&&s.endpoint&&s.keys); diag.subscriptions=subs.length; diag.alertsTotal=rows.reduce((n,x)=>n+((x&&x.data&&Array.isArray(x.data.alerts))?x.data.alerts.length:0),0); diag.rowsInfo=rows.map(x=>({user:(x&&x.user_id||"").slice(0,8), upd:x&&x.updated_at, pos:(x&&x.data&&Array.isArray(x.data.positions))?x.data.positions.length:0, snaps:(x&&x.data&&Array.isArray(x.data.snapshots))?x.data.snapshots.length:0})); } else diag.dbStatus=r.status; } }catch(e){ diag.dbError=String(e); }
       if(wantTest){
         const vpv=parseVapid(env), SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
         diag.testSent=0; diag.testResults=[];
