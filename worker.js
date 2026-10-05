@@ -240,7 +240,7 @@ export default {
       diag.hasServiceKey=!!env.SUPABASE_SERVICE_KEY;
       const wantTest = url.searchParams.get("test")==="1";
       let subs=[];
-      try{ const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY; if(KEY){ const r=await fetch(SUPA+"/rest/v1/portfolios?select=data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok){ const rows=await r.json(); diag.portfolios=rows.length; subs=rows.map(x=>x&&x.data&&x.data.pushSub).filter(s=>s&&s.endpoint&&s.keys); diag.subscriptions=subs.length; diag.alertsTotal=rows.reduce((n,x)=>n+((x&&x.data&&Array.isArray(x.data.alerts))?x.data.alerts.length:0),0); } else diag.dbStatus=r.status; } }catch(e){ diag.dbError=String(e); }
+      try{ const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY; if(KEY){ const r=await fetch(SUPA+"/rest/v1/portfolios?select=data,updated_at,user_id",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok){ const rows=await r.json(); diag.portfolios=rows.length; subs=rows.map(x=>x&&x.data&&x.data.pushSub).filter(s=>s&&s.endpoint&&s.keys); diag.subscriptions=subs.length; diag.alertsTotal=rows.reduce((n,x)=>n+((x&&x.data&&Array.isArray(x.data.alerts))?x.data.alerts.length:0),0); diag.rowsInfo=rows.map(x=>({user:(x&&x.user_id||"").slice(0,8), upd:x&&x.updated_at, pos:(x&&x.data&&Array.isArray(x.data.positions))?x.data.positions.length:0, snaps:(x&&x.data&&Array.isArray(x.data.snapshots))?x.data.snapshots.length:0})); } else diag.dbStatus=r.status; } }catch(e){ diag.dbError=String(e); }
       if(wantTest){
         const vpv=parseVapid(env), SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
         diag.testSent=0; diag.testResults=[];
