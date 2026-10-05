@@ -476,8 +476,8 @@ const usdF={format:v=>new Intl.NumberFormat("en-US",{style:"currency",currency:"
 const gbpF={format:v=>new Intl.NumberFormat(LANG==="en"?"en-GB":"fr-FR",{style:"currency",currency:"GBP",currencyDisplay:"narrowSymbol"}).format(v)};
 const CURSYM={EUR:"€",USD:"$",GBP:"£"};
 let DISPCUR="EUR"; try{ DISPCUR=localStorage.getItem("boussole-cur")||"EUR"; }catch(_){}
-const CLS={ action:{l:"Actions",c:"#18A886"}, crypto:{l:"Crypto",c:"#9B70EE"}, etf:{l:"ETF",c:"#4E8BEF"}, or:{l:"Or",c:"#E0B54F"}, argent:{l:"Argent",c:"#B9C4D0"}, cuivre:{l:"Cuivre",c:"#C77B4A"}, bronze:{l:"Bronze",c:"#9A6B3F"}, maison:{l:"Maison / immo",c:"#5FB37A"}, montre:{l:"Montre",c:"#C9A24B"}, cash:{l:"Cash",c:"#5FA8D3"}, autre:{l:"Actif",c:"#8091A9"} };
-const ORDER=["action","crypto","etf","or","argent","cuivre","bronze","maison","montre","cash","autre"];
+const CLS={ action:{l:"Actions",c:"#18A886"}, crypto:{l:"Crypto",c:"#9B70EE"}, etf:{l:"ETF",c:"#4E8BEF"}, or:{l:"Or",c:"#E0B54F"}, argent:{l:"Argent",c:"#B9C4D0"}, cuivre:{l:"Cuivre",c:"#C77B4A"}, bronze:{l:"Bronze",c:"#9A6B3F"}, maison:{l:"Maison / immo",c:"#5FB37A"}, montre:{l:"Montre",c:"#C9A24B"}, collection:{l:"Collection",c:"#C77BB0"}, cash:{l:"Cash",c:"#5FA8D3"}, autre:{l:"Actif",c:"#8091A9"} };
+const ORDER=["action","crypto","etf","or","argent","cuivre","bronze","maison","montre","collection","cash","autre"];
 const METALS={ or:{sym:"GC=F",gpu:31.1034768}, argent:{sym:"SI=F",gpu:31.1034768}, cuivre:{sym:"HG=F",gpu:453.59237} };
 const METALCLS=new Set(["or","argent","cuivre","bronze"]);
 function gramsPerUnit(u){ return ({once:31.1034768, gramme:1, kg:1000, livre:453.59237})[u||"once"]||31.1034768; }
@@ -553,7 +553,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:""}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -571,7 +571,7 @@ const App = {
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
       this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
-      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; }
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
     }catch(e){}
@@ -614,7 +614,7 @@ const App = {
         let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
         if(lastStr!==JSON.stringify(snapD)){ hist.push({at:Date.now(), d:snapD}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
       }catch(_){}
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
@@ -914,6 +914,7 @@ const App = {
           :`<div class="empty"><div class="big">🧭</div>Ton portefeuille est vide.<br><span class="mut">Ajoute ta première ligne (PEA, action, ETF, Bitcoin, or…) avec « + Ajouter une ligne ».</span></div>`}
       </div>
       ${has?this.retraiteCard():""}
+      ${has?this.peaCard():""}
       ${has?this.targetsCard():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div id="divbox"></div>
@@ -1075,6 +1076,20 @@ const App = {
     const rows = hist.length ? hist.map((v,i)=>{ const np=(v.d&&Array.isArray(v.d.positions))?v.d.positions.length:0; const dt=new Date(v.at).toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
       return `<div class="tgttop" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${i===0?"<b>Actuelle</b>":esc(dt)} <span class="mut" style="font-size:11.5px">· ${np} position(s)</span></span>${i===0?'<span class="mut" style="font-size:11.5px">version en cours</span>':`<button class="btn small ghost" onclick="App.restoreVersion(${v.at})">Restaurer</button>`}</div>`; }).join("") : '<div class="mut">Aucune version enregistree pour l\'instant.</div>';
     return `<div class="card" style="margin-top:14px;border:1px solid #2f81f7"><div class="viewhead" style="margin-bottom:8px"><div class="mlab">Historique des versions (${hist.length})</div><div class="grow"></div><button class="rowbtn" onclick="App.toggleVersions()">✕</button></div><div class="mut" style="font-size:12px;margin-bottom:8px">Les 12 dernieres versions de ton portefeuille. En cas de mauvaise manip, reviens a une version anterieure.</div>${rows}</div>`;
+  },
+  setPeaDate(v){ this.S.peaDate=v||""; this.save(); this.renderPortfolio(); },
+  peaCard(){
+    const hasPea=this.S.positions.some(p=>p.env==="PEA" && this.toEur((+p.qty||0)*(+p.price||0),p.cur)>0);
+    const d=this.S.peaDate||"";
+    if(!hasPea && !d) return "";
+    let info="";
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d)){
+      const open=new Date(d+"T00:00:00"), cap=new Date(open); cap.setFullYear(cap.getFullYear()+5);
+      const ms=cap-new Date();
+      if(ms<=0){ info=`<div class="mut" style="font-size:12.5px;margin-top:8px">✓ Cap des 5 ans atteint (le ${cap.toLocaleDateString("fr-FR")}) : tes retraits sont exonérés d'impôt sur le revenu (hors prélèvements sociaux).</div>`; }
+      else { const days=Math.ceil(ms/86400000), y=Math.floor(days/365), mo=Math.floor((days%365)/30); info=`<div class="mut" style="font-size:12.5px;margin-top:8px">Cap fiscal des 5 ans le <b style="color:var(--ink)">${cap.toLocaleDateString("fr-FR")}</b> (dans ${y>0?y+" an"+(y>1?"s ":" "):""}${mo} mois). Avant cette date, tout retrait ferme le plan et fait perdre l'avantage.</div>`; }
+    }
+    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Mon PEA</div><div class="field" style="max-width:260px"><label>Date d'ouverture <span class="mut" style="font-weight:400">(pour suivre le cap des 5 ans)</span></label><input type="date" value="${esc(d)}" onchange="App.setPeaDate(this.value)"></div>${info}</div>`;
   },
   dupGroups(){
     const groups={};
@@ -1255,12 +1270,30 @@ const App = {
       <div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.CHART.range===r[0]?' on':''}" onclick="App.chartRange('${r[0]}')">${r[1]}</button>`).join("")}</div>
       <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div>${this.lotsBlock(p)}<div id="pstatsbox"></div>`;
   },
+  recomputeFromLots(p){
+    if(!Array.isArray(p.lots)||!p.lots.length) return;
+    let q=0,c=0,f=0; for(const l of p.lots){ const lq=+l.qty||0, lp=+l.pru||0; q+=lq; c+=lq*lp; f+=(+l.fees||0); }
+    p.qty=q; p.pru = q>0?c/q:0; p.fees=f;
+  },
+  editLot(id,i){ this._editLot={id,i}; this.renderPortfolio(); },
+  cancelLot(){ this._editLot=null; this.renderPortfolio(); },
+  saveLot(id,i){ const p=this.S.positions.find(x=>x.id===id); if(!p||!Array.isArray(p.lots)||!p.lots[i]) return;
+    const num=v=>parseFloat(String(v==null?"":v).replace(",",".").replace(/\s/g,""))||0; const g=x=>($(x)?$(x).value:"");
+    p.lots[i]={qty:num(g("lot-qty")), pru:num(g("lot-pru")), fees:num(g("lot-fees")), date:g("lot-date")||"", source:g("lot-source").trim()};
+    this.recomputeFromLots(p); this._editLot=null; this.save(); this.render();
+  },
+  delLot(id,i){ const p=this.S.positions.find(x=>x.id===id); if(!p||!Array.isArray(p.lots)||!p.lots[i]) return;
+    if(!confirm("Supprimer cet achat du détail ? La quantité et le prix moyen seront recalculés.")) return;
+    p.lots.splice(i,1); if(p.lots.length) this.recomputeFromLots(p); this._editLot=null; this.save(); this.render();
+  },
   lotsBlock(p){
     const lots=Array.isArray(p.lots)?p.lots:null; if(!lots||lots.length<2) return "";
     const cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v), qf=q=>(+q||0).toLocaleString("fr-FR",{maximumFractionDigits:8});
+    const ed=this._editLot&&this._editLot.id===p.id?this._editLot.i:-1;
     let tq=0,tc=0,tf=0;
     const rows=lots.map((l,i)=>{ const q=+l.qty||0, pr=+l.pru||0, fe=+l.fees||0, cost=q*pr; tq+=q; tc+=cost; tf+=fe;
-      return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>Achat ${i+1}${l.date?` <span class="mut" style="font-size:11px">${esc(l.date)}</span>`:""}${l.source?` <span class="mut" style="font-size:11px">· ${esc(l.source)}</span>`:""}${fe>0?` <span class="mut" style="font-size:11px">· frais ${cf(fe)}</span>`:""}</span><span class="mono" style="font-size:12.5px">${qf(q)} × ${cf(pr)} = ${cf(cost)}</span></div>`; }).join("");
+      if(i===ed){ return `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div class="frow c4"><div class="field"><label>Quantité</label><input id="lot-qty" inputmode="decimal" value="${esc(q)}"></div><div class="field"><label>Prix d'achat</label><input id="lot-pru" inputmode="decimal" value="${esc(pr)}"></div><div class="field"><label>Frais</label><input id="lot-fees" inputmode="decimal" value="${esc(fe||'')}"></div><div class="field"><label>Date</label><input id="lot-date" type="date" value="${esc(l.date||'')}"></div></div><div class="field"><label>Provenance</label><input id="lot-source" value="${esc(l.source||'')}" placeholder="Ex : Trade Republic"></div><div style="display:flex;gap:8px;margin-top:6px"><button class="btn small" onclick="App.saveLot('${p.id}',${i})">Enregistrer</button><button class="btn small ghost" onclick="App.cancelLot()">Annuler</button></div></div>`; }
+      return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>Achat ${i+1}${l.date?` <span class="mut" style="font-size:11px">${esc(l.date)}</span>`:""}${l.source?` <span class="mut" style="font-size:11px">· ${esc(l.source)}</span>`:""}${fe>0?` <span class="mut" style="font-size:11px">· frais ${cf(fe)}</span>`:""}</span><span style="display:flex;align-items:center;gap:6px"><span class="mono" style="font-size:12.5px">${qf(q)} × ${cf(pr)} = ${cf(cost)}</span><button class="rowbtn" title="Modifier" onclick="App.editLot('${p.id}',${i})">✎</button><button class="rowbtn" title="Supprimer" onclick="App.delLot('${p.id}',${i})">✕</button></span></div>`; }).join("");
     const avg=tq>0?tc/tq:0;
     return `<div class="card" style="margin-top:12px"><div class="mlab" style="margin-bottom:8px">Détail de tes achats (${lots.length})</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total</b></span><span class="mono"><b>${qf(tq)} titres · prix moyen ${cf(avg)}${tf>0?` · frais ${cf(tf)}`:""}</b></span></div>${tf>0?`<div class="mut" style="font-size:11.5px;margin-top:6px">Coût total (achats + frais) : <b style="color:var(--ink)">${cf(tc+tf)}</b></div>`:""}</div>`;
   },
