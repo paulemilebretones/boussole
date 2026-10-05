@@ -570,6 +570,7 @@ const App = {
       if(error) return; // lecture echouee : on garde _loadOK=false, aucune sauvegarde ne partira
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
+      this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
       if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
@@ -599,6 +600,15 @@ const App = {
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
       if(this._loadOK===false){ setBadge("err"); return; } // SECURITE : lecture non confirmee, on n'ecrase JAMAIS la base
+      // CONCURRENCE : si la base a ete modifiee ailleurs (autre onglet/appareil) depuis notre chargement, on n'ecrase pas.
+      try{ const { data:cur } = await sb.from("portfolios").select("updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
+        const remoteAt = cur && cur[0] && cur[0].updated_at;
+        if(remoteAt && this._loadedAt && new Date(remoteAt).getTime() > new Date(this._loadedAt).getTime()+1000){
+          setBadge("err");
+          if(!this._conflictWarned){ this._conflictWarned=true; alert("Tes donnees ont ete modifiees ailleurs (autre onglet ou appareil). Recharge la page pour recuperer la derniere version avant de continuer, afin de ne rien ecraser."); }
+          return;
+        }
+      }catch(_){}
       const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
@@ -611,6 +621,7 @@ const App = {
           const { error:e2 } = await sb.from("portfolios").insert({ user_id:this.userId, data:payload, updated_at:now });
           if(e2) throw e2;
         }
+        this._loadedAt = now; // on vient d'ecrire : notre version devient la reference
         setBadge("ok");
       }catch(e){ setBadge("err"); }
     },600);
