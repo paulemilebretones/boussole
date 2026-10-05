@@ -553,7 +553,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:""}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", sells:[]}, userId:null, saveTimer:null, FORM:null, SELL:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -571,7 +571,7 @@ const App = {
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
       this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
-      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; }
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.sells=Array.isArray(d.sells)?d.sells:[]; }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
     }catch(e){}
@@ -610,11 +610,11 @@ const App = {
         }
       }catch(_){}
       // Historique des versions (12 dernieres) : permet de revenir en arriere apres une mauvaise manip.
-      try{ const snapD={positions:this.S.positions, watch:this.S.watch||[], reminders:this.S.reminders||[], alerts:this.S.alerts||[], targets:this.S.targets||{}, dividends:this.S.dividends||{}, rate:this.S.rate, rateGbp:this.S.rateGbp};
+      try{ const snapD={positions:this.S.positions, watch:this.S.watch||[], reminders:this.S.reminders||[], alerts:this.S.alerts||[], targets:this.S.targets||{}, dividends:this.S.dividends||{}, sells:this.S.sells||[], peaDate:this.S.peaDate||"", rate:this.S.rate, rateGbp:this.S.rateGbp};
         let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
         if(lastStr!==JSON.stringify(snapD)){ hist.push({at:Date.now(), d:snapD}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
       }catch(_){}
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", sells:this.S.sells||[], savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
@@ -886,7 +886,7 @@ const App = {
           <td class="num">${cf(+p.price||0)}</td>
           <td class="num">${eurF.format(ve)}</td>
           <td class="num ${pnl>=0?'up':'down'}">${(pnl>=0?'+':'')+eurF.format(pnl)}<br><span class="mut">${(pct>=0?'+':'')+pct.toLocaleString('fr-FR',{maximumFractionDigits:1})} %</span></td>
-          <td class="num"><button class="rowbtn" title="Modifier" onclick="App.openForm('${p.id}')">✎</button><button class="rowbtn" title="Supprimer" onclick="App.delPos('${p.id}')">✕</button></td>
+          <td class="num">${(p.cls!=="cash"&&(+p.qty>0))?`<button class="rowbtn" title="Vendre" onclick="App.openSell('${p.id}')">€</button>`:""}<button class="rowbtn" title="Modifier" onclick="App.openForm('${p.id}')">✎</button><button class="rowbtn" title="Supprimer" onclick="App.delPos('${p.id}')">✕</button></td>
         </tr>`; }).join("");
     }
     $("view").innerHTML=`
@@ -908,6 +908,7 @@ const App = {
       </div>
       <div id="evobox"></div>
       <div id="formzone"></div>
+      <div id="sellzone">${this.SELL?this.sellCard():""}</div>
       <div id="chartzone">${this.CHART?this.chartCard():""}</div>
       <div class="card" style="padding:${has?'6px 8px':'18px'}">
         ${has?`<div class="tablewrap"><table class="list"><thead><tr><th>Position</th><th>Enveloppe</th><th class="num">Qté</th><th class="num">Prix d'achat</th><th class="num">Prix actuel</th><th class="num">Valeur (€)</th><th class="num">+/-</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
@@ -918,6 +919,7 @@ const App = {
       ${has?this.targetsCard():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div id="divbox"></div>
+      ${this.sellsCard()}
       ${has?this.versionsCard():""}
       ${has?`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="mlab" style="flex:1;min-width:140px">Sauvegarde</div><button class="btn small ghost" onclick="App.exportData()">⬇ Exporter</button><button class="btn small ghost" onclick="App.importData()">⬆ Importer</button><button class="btn small ghost" onclick="App.toggleVersions()">🕑 Versions</button></div>`:""}
       <div class="mut" style="text-align:center">Sauvegarde automatique sur ton compte (+ copie locale + 12 versions). <b>⬇ Exporter</b> pour un fichier de secours. Bouton <b>↻ Cours</b> pour rafraîchir les prix ; clique le nom d'une ligne pour son graphique.</div>`;
@@ -1045,6 +1047,43 @@ const App = {
   },
   delPos(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; if(!confirm(`Supprimer ${p.name} ?`)) return; this.S.positions=this.S.positions.filter(x=>x.id!==id); this.save(); this.render(); },
   agoLabel(t){ if(!t) return ""; const s=Math.max(0,Math.round((Date.now()-t)/1000)); if(s<60) return "à l'instant"; const m=Math.round(s/60); if(m<60) return "maj il y a "+m+" min"; const h=Math.floor(m/60); if(h<24) return "maj il y a "+h+" h"; return "maj il y a "+Math.floor(h/24)+" j"; },
+  openSell(id){ this.SELL=id; this.CHART=null; this.FORM=null; this.renderPortfolio(); const z=$("sellzone"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
+  closeSell(){ this.SELL=null; this.renderPortfolio(); },
+  estimateSell(){ const p=this.S.positions.find(x=>x.id===this.SELL); if(!p) return; const num=v=>parseFloat(String(v==null?"":v).replace(",",".").replace(/\s/g,""))||0; const g=x=>($(x)?$(x).value:""); const q=num(g("s-qty")), px=num(g("s-price")), fe=num(g("s-fees")), pru=+p.pru||0, held=+p.qty||0; const cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v); const gain=q*(px-pru)-fe; const el=$("s-estim"); if(el){ el.innerHTML = (q>0&&px>0) ? `Plus-value : <b class="${gain>=0?'up':'down'}">${(gain>=0?'+':'')+cf(gain)}</b> · reste ${(held-q).toLocaleString("fr-FR",{maximumFractionDigits:8})} ${q>held?'<span class="down">(plus que détenu !)</span>':''}` : ""; } },
+  confirmSell(){ const p=this.S.positions.find(x=>x.id===this.SELL); if(!p) return; const num=v=>parseFloat(String(v==null?"":v).replace(",",".").replace(/\s/g,""))||0; const g=x=>($(x)?$(x).value:""); const cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v);
+    const q=num(g("s-qty")), px=num(g("s-price")), fe=num(g("s-fees")), date=g("s-date")||new Date().toISOString().slice(0,10), held=+p.qty||0, pru=+p.pru||0;
+    if(!(q>0)){ alert("Indique la quantité vendue."); return; } if(!(px>0)){ alert("Indique le prix de vente."); return; } if(q>held+1e-9){ alert("Tu ne peux pas vendre plus que ce que tu détiens ("+held+")."); return; }
+    const gain=q*(px-pru)-fe;
+    if(!confirm("Vendre "+q.toLocaleString("fr-FR",{maximumFractionDigits:8})+" "+p.name+" à "+cf(px)+" ?\n\nPlus-value réalisée : "+(gain>=0?'+':'')+cf(gain))) return;
+    this.S.sells=this.S.sells||[]; this.S.sells.push({id:uid(), ysym:this.ysym(p), name:p.name, cls:p.cls, env:p.env, cur:p.cur, qty:q, price:px, pru, fees:fe, gain, date, source:p.source||""});
+    const newQty=held-q;
+    if(newQty<=1e-9){ this.S.positions=this.S.positions.filter(x=>x.id!==p.id); }
+    else { if(Array.isArray(p.lots)&&p.lots.length&&held>0){ const r=newQty/held; p.lots=p.lots.map(l=>({...l, qty:(+l.qty||0)*r})); p.fees=(+p.fees||0)*r; } p.qty=newQty; }
+    this.SELL=null; this.save(); this.render();
+  },
+  sellCard(){
+    const p=this.S.positions.find(x=>x.id===this.SELL); if(!p) return "";
+    const cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v), held=+p.qty||0, pru=+p.pru||0, px=+p.price||0;
+    return `<div class="card"><div class="viewhead" style="margin-bottom:8px"><h3 style="font-size:17px">Vendre ${esc(p.name)}</h3><div class="grow"></div><button class="rowbtn" onclick="App.closeSell()">✕</button></div>
+      <div class="mut" style="font-size:12.5px;margin-bottom:10px">Tu détiens <b style="color:var(--ink)">${held.toLocaleString("fr-FR",{maximumFractionDigits:8})}</b> · prix moyen d'achat <b style="color:var(--ink)">${cf(pru)}</b>.</div>
+      <div class="frow c4">
+        <div class="field"><label>Quantité vendue</label><input id="s-qty" inputmode="decimal" value="${held}" oninput="App.estimateSell()"></div>
+        <div class="field"><label>Prix de vente (unité)</label><input id="s-price" inputmode="decimal" value="${px||''}" placeholder="Prix du jour" oninput="App.estimateSell()"></div>
+        <div class="field"><label>Frais</label><input id="s-fees" inputmode="decimal" value="" placeholder="0" oninput="App.estimateSell()"></div>
+        <div class="field"><label>Date</label><input id="s-date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+      </div>
+      <div id="s-estim" class="mut" style="font-size:12.5px;margin:4px 0 10px;min-height:1em"></div>
+      <div style="display:flex;gap:8px"><button class="btn small" onclick="App.confirmSell()">Enregistrer la vente</button><button class="btn small ghost" onclick="App.closeSell()">Annuler</button></div>
+    </div>`;
+  },
+  delSell(id){ if(!confirm("Supprimer cette vente de l'historique ? (ça ne remet pas les titres dans ton portefeuille)")) return; this.S.sells=(this.S.sells||[]).filter(x=>x.id!==id); this.save(); this.render(); },
+  sellsCard(){
+    const sells=this.S.sells||[]; if(!sells.length) return "";
+    const totalEur=sells.reduce((s,x)=>s+this.toEur(+x.gain||0,x.cur),0);
+    const rows=sells.slice().reverse().map(x=>{ const cf=v=>x.cur==="USD"?usdF.format(v):eurF.format(v), g=+x.gain||0;
+      return `<div class="tgttop" style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="flex:1"><b>${esc(x.name)}</b> <span class="mut" style="font-size:11.5px">${esc(x.date||"")} · ${(+x.qty||0).toLocaleString("fr-FR",{maximumFractionDigits:8})} × ${cf(+x.price||0)}${x.env?` · ${esc(x.env)}`:""}</span></div><span style="display:flex;align-items:center;gap:8px"><span class="mono ${g>=0?'up':'down'}">${(g>=0?'+':'')+cf(g)}</span><button class="rowbtn" title="Supprimer" onclick="App.delSell('${x.id}')">✕</button></span></div>`; }).join("");
+    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Plus-values réalisées (ventes)</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total réalisé</b></span><span class="mono ${totalEur>=0?'up':'down'}"><b>${(totalEur>=0?'+':'')+this.fmtDisp(totalEur)}</b></span></div><div class="mut" style="font-size:11px;margin-top:8px">Gain de tes ventes passées (prix de vente − prix d'achat moyen − frais). Informatif : la fiscalité réelle dépend de l'enveloppe (PEA exonéré après 5 ans, CTO imposable).</div></div>`;
+  },
   exportData(){
     try{
       const d={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], reminders:this.S.reminders||[], watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, exportedAt:new Date().toISOString()};
@@ -1067,7 +1106,7 @@ const App = {
     const v=(this.S.history||[]).find(x=>x.at===at); if(!v||!v.d) return;
     if(!confirm("Revenir a la version du "+new Date(at).toLocaleString("fr-FR")+" ?\n\nTon etat actuel sera d'abord garde dans l'historique.")) return;
     const d=v.d;
-    this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; if(d.rate)this.S.rate=d.rate; if(d.rateGbp)this.S.rateGbp=d.rateGbp;
+    this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; if(Array.isArray(d.sells))this.S.sells=d.sells; if(d.peaDate!=null)this.S.peaDate=d.peaDate; if(d.rate)this.S.rate=d.rate; if(d.rateGbp)this.S.rateGbp=d.rateGbp;
     this._showVersions=false; this.save(); this.render();
   },
   versionsCard(){
@@ -1264,7 +1303,7 @@ const App = {
   chartCard(){
     const p=this.S.positions.find(x=>x.id===this.CHART.id); if(!p) return "";
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
-    return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><h3 style="font-size:17px">${esc(p.name)} <span class="mut" style="font-size:13px">${esc(this.ysym(p)||"?")}</span></h3><div class="grow"></div><button class="rowbtn" title="Fermer" onclick="App.closeChart()">✕</button></div>
+    return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><h3 style="font-size:17px">${esc(p.name)} <span class="mut" style="font-size:13px">${esc(this.ysym(p)||"?")}</span></h3><div class="grow"></div>${(p.cls!=="cash"&&(+p.qty>0))?`<button class="btn small ghost" onclick="App.openSell('${p.id}')">Vendre</button>`:""}<button class="rowbtn" title="Fermer" onclick="App.closeChart()">✕</button></div>
       ${p.source?`<div class="mut" style="font-size:12.5px;margin:-4px 0 8px">Provenance : <b style="color:var(--ink)">${esc(p.source)}</b></div>`:""}
       ${(+p.fees>0)?`<div class="mut" style="font-size:12.5px;margin:-4px 0 8px">Frais d'achat : <b style="color:var(--ink)">${p.cur==="USD"?usdF.format(+p.fees):eurF.format(+p.fees)}</b> <span style="opacity:.7">(inclus dans le +/-)</span></div>`:""}
       <div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.CHART.range===r[0]?' on':''}" onclick="App.chartRange('${r[0]}')">${r[1]}</button>`).join("")}</div>
