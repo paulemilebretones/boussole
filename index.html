@@ -1013,9 +1013,12 @@ const App = {
         const npru = (pru1>0&&pru2>0)?(q1*pru1+q2*pru2)/Q : (pru2>0?pru2:pru1);
         const cf=v=>data.cur==="USD"?usdF.format(v):eurF.format(v);
         if(confirm(`Tu detiens deja ${q1.toLocaleString("fr-FR",{maximumFractionDigits:8})} ${twin.name} dans ${twin.env||"cette enveloppe"}.\n\nJ'additionne : ${Q.toLocaleString("fr-FR",{maximumFractionDigits:8})} au total, prix d'achat moyen ${cf(npru)} (au lieu de creer une 2e ligne).\n\nOK pour fusionner ? (Annuler = garder une ligne separee)`)){
+          const today=new Date().toISOString().slice(0,10);
+          if(!Array.isArray(twin.lots)) twin.lots=[{qty:q1,pru:pru1,date:twin.buyDate||""}]; // 1er achat existant
+          twin.lots.push({qty:q2,pru:pru2,date:today}); // nouvel achat
           twin.qty=Q; twin.pru=npru; if(data.price>0) twin.price=data.price; if(dsym && !twin.ysym) twin.ysym=data.ysym;
-        } else { this.S.positions.push({id:uid(),...data}); }
-      } else { this.S.positions.push({id:uid(),...data}); }
+        } else { this.S.positions.push({id:uid(),...data, lots:[{qty:data.qty,pru:data.pru,date:new Date().toISOString().slice(0,10)}]}); }
+      } else { this.S.positions.push({id:uid(),...data, lots:(cls==="cash"?undefined:[{qty:data.qty,pru:data.pru,date:new Date().toISOString().slice(0,10)}])}); }
     }
     else { const p=this.S.positions.find(x=>x.id===this.FORM); if(p) Object.assign(p,data); }
     this.FORM=null; this._new=null; this.save(); this.render();
@@ -1031,9 +1034,10 @@ const App = {
     const n=dups.reduce((s,g)=>s+g.length,0);
     if(!confirm(`${n} lignes en double detectees (meme valeur, meme enveloppe, meme devise).\n\nElles vont etre fusionnees : quantites additionnees et prix d'achat moyen pondere. Continuer ?`)) return;
     for(const g of dups){
-      let Q=0, cost=0, price=0; const base=g[0];
-      for(const p of g){ const q=+p.qty||0, pru=+p.pru||0; Q+=q; if(pru>0) cost+=q*pru; if(+p.price>0) price=+p.price; if(!base.ysym && this.ysym(p)) base.ysym=this.ysym(p); }
-      base.qty=Q; base.pru = Q>0 ? cost/Q : (+base.pru||0); if(price>0) base.price=price;
+      let Q=0, cost=0, price=0; const base=g[0]; const lots=[];
+      for(const p of g){ const q=+p.qty||0, pru=+p.pru||0; Q+=q; if(pru>0) cost+=q*pru; if(+p.price>0) price=+p.price; if(!base.ysym && this.ysym(p)) base.ysym=this.ysym(p);
+        if(Array.isArray(p.lots)&&p.lots.length) lots.push(...p.lots); else lots.push({qty:q,pru:pru,date:p.buyDate||""}); }
+      base.qty=Q; base.pru = Q>0 ? cost/Q : (+base.pru||0); if(price>0) base.price=price; base.lots=lots;
       const others=g.slice(1).map(p=>p.id);
       this.S.positions=this.S.positions.filter(p=>others.indexOf(p.id)<0);
     }
@@ -1195,7 +1199,16 @@ const App = {
     const ranges=[["1d","1J"],["5d","1S"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1A"],["5y","5A"],["max","Max"]];
     return `<div class="card"><div class="viewhead" style="margin-bottom:10px"><h3 style="font-size:17px">${esc(p.name)} <span class="mut" style="font-size:13px">${esc(this.ysym(p)||"?")}</span></h3><div class="grow"></div><button class="rowbtn" title="Fermer" onclick="App.closeChart()">✕</button></div>
       <div class="rangebar">${ranges.map(r=>`<button class="rbtn${this.CHART.range===r[0]?' on':''}" onclick="App.chartRange('${r[0]}')">${r[1]}</button>`).join("")}</div>
-      <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div><div id="pstatsbox"></div>`;
+      <div id="chartbox">${this.CHART.rendered||'<div class="mut">Chargement…</div>'}</div></div>${this.lotsBlock(p)}<div id="pstatsbox"></div>`;
+  },
+  lotsBlock(p){
+    const lots=Array.isArray(p.lots)?p.lots:null; if(!lots||lots.length<2) return "";
+    const cf=v=>p.cur==="USD"?usdF.format(v):eurF.format(v), qf=q=>(+q||0).toLocaleString("fr-FR",{maximumFractionDigits:8});
+    let tq=0,tc=0;
+    const rows=lots.map((l,i)=>{ const q=+l.qty||0, pr=+l.pru||0, cost=q*pr; tq+=q; tc+=cost;
+      return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>Achat ${i+1}${l.date?` <span class="mut" style="font-size:11px">${esc(l.date)}</span>`:""}</span><span class="mono" style="font-size:12.5px">${qf(q)} × ${cf(pr)} = ${cf(cost)}</span></div>`; }).join("");
+    const avg=tq>0?tc/tq:0;
+    return `<div class="card" style="margin-top:12px"><div class="mlab" style="margin-bottom:8px">Détail de tes achats (${lots.length})</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total</b></span><span class="mono"><b>${qf(tq)} titres · prix moyen ${cf(avg)}</b></span></div></div>`;
   },
   async loadChart(){
     if(!this.CHART) return; const p=this.S.positions.find(x=>x.id===this.CHART.id); if(!p) return;
