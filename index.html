@@ -553,7 +553,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}}, userId:null, saveTimer:null, FORM:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0}, userId:null, saveTimer:null, FORM:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -571,7 +571,7 @@ const App = {
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
       this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
-      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; }
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
     }catch(e){}
@@ -609,7 +609,12 @@ const App = {
           return;
         }
       }catch(_){}
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, savedAt:Date.now()};
+      // Historique des versions (12 dernieres) : permet de revenir en arriere apres une mauvaise manip.
+      try{ const snapD={positions:this.S.positions, watch:this.S.watch||[], reminders:this.S.reminders||[], alerts:this.S.alerts||[], targets:this.S.targets||{}, dividends:this.S.dividends||{}, rate:this.S.rate, rateGbp:this.S.rateGbp};
+        let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
+        if(lastStr!==JSON.stringify(snapD)){ hist.push({at:Date.now(), d:snapD}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
+      }catch(_){}
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
@@ -850,8 +855,7 @@ const App = {
       <div class="mlab" style="margin-bottom:10px">Mes données</div>
       <div class="secrow" style="margin-bottom:14px">
         <button class="btn small ghost" onclick="App.exportData()">Exporter mes données</button>
-        <button class="btn small ghost" onclick="document.getElementById('importfile').click()">Importer un fichier</button>
-        <input type="file" id="importfile" accept="application/json,.json" style="display:none" onchange="App.importData(event)">
+        <button class="btn small ghost" onclick="App.importData()">Importer un fichier</button>
       </div>
       <div class="mut" style="font-size:12px">Les cours (actions EU/US, ETF, crypto) se mettent a jour tout seuls avec le bouton <b>↻ Cours</b> du portefeuille, et le graphique s'affiche en cliquant sur le nom d'une ligne. Rien a configurer, aucune clé.</div>
     </div>`;
@@ -886,7 +890,7 @@ const App = {
         </tr>`; }).join("");
     }
     $("view").innerHTML=`
-      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div><button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
+      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div>${this.S.pricesAt?`<span class="mut" style="font-size:11.5px;align-self:center;margin-right:6px">cours ${this.agoLabel(this.S.pricesAt)}</span>`:""}<button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
       ${this.remindersBanner()}
       ${this.localBakBanner()}
       ${this.dupBanner()}
@@ -913,7 +917,9 @@ const App = {
       ${has?this.targetsCard():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div id="divbox"></div>
-      <div class="mut" style="text-align:center">Sauvegarde automatique sur ton compte. Bouton <b>↻ Cours</b> pour rafraîchir les prix ; clique le nom d'une ligne pour son graphique.</div>`;
+      ${has?this.versionsCard():""}
+      ${has?`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="mlab" style="flex:1;min-width:140px">Sauvegarde</div><button class="btn small ghost" onclick="App.exportData()">⬇ Exporter</button><button class="btn small ghost" onclick="App.importData()">⬆ Importer</button><button class="btn small ghost" onclick="App.toggleVersions()">🕑 Versions</button></div>`:""}
+      <div class="mut" style="text-align:center">Sauvegarde automatique sur ton compte (+ copie locale + 12 versions). <b>⬇ Exporter</b> pour un fichier de secours. Bouton <b>↻ Cours</b> pour rafraîchir les prix ; clique le nom d'une ligne pour son graphique.</div>`;
     this.renderForm();
     if(has){ this.loadEvolution(); this.loadDividends(); }
   },
@@ -1037,6 +1043,39 @@ const App = {
     this.FORM=null; this._new=null; this.save(); this.render();
   },
   delPos(id){ const p=this.S.positions.find(x=>x.id===id); if(!p) return; if(!confirm(`Supprimer ${p.name} ?`)) return; this.S.positions=this.S.positions.filter(x=>x.id!==id); this.save(); this.render(); },
+  agoLabel(t){ if(!t) return ""; const s=Math.max(0,Math.round((Date.now()-t)/1000)); if(s<60) return "à l'instant"; const m=Math.round(s/60); if(m<60) return "maj il y a "+m+" min"; const h=Math.floor(m/60); if(h<24) return "maj il y a "+h+" h"; return "maj il y a "+Math.floor(h/24)+" j"; },
+  exportData(){
+    try{
+      const d={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], reminders:this.S.reminders||[], watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, exportedAt:new Date().toISOString()};
+      const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="boussole-"+new Date().toISOString().slice(0,10)+".json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+    }catch(e){ alert("Export impossible : "+(e&&e.message||e)); }
+  },
+  importData(){
+    const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+    inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return; const rd=new FileReader();
+      rd.onload=()=>{ try{ const d=JSON.parse(rd.result); if(!d||!Array.isArray(d.positions)) throw new Error("ce fichier n'est pas un export Boussole");
+        if(!confirm("Remplacer ton portefeuille actuel par ce fichier ("+d.positions.length+" positions) ?\n\nTon etat actuel sera d'abord garde dans l'historique des versions, tu pourras revenir en arriere.")) return;
+        this.S.positions=d.positions; if(d.rate)this.S.rate=d.rate; if(d.rateGbp)this.S.rateGbp=d.rateGbp; if(Array.isArray(d.snapshots))this.S.snapshots=d.snapshots; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{};
+        this.save(); this.render(); alert("Import reussi : "+d.positions.length+" positions."); }catch(e){ alert("Fichier illisible : "+(e&&e.message||e)); } };
+      rd.readAsText(f); };
+    inp.click();
+  },
+  toggleVersions(){ this._showVersions=!this._showVersions; this.renderPortfolio(); },
+  restoreVersion(at){
+    const v=(this.S.history||[]).find(x=>x.at===at); if(!v||!v.d) return;
+    if(!confirm("Revenir a la version du "+new Date(at).toLocaleString("fr-FR")+" ?\n\nTon etat actuel sera d'abord garde dans l'historique.")) return;
+    const d=v.d;
+    this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; if(d.rate)this.S.rate=d.rate; if(d.rateGbp)this.S.rateGbp=d.rateGbp;
+    this._showVersions=false; this.save(); this.render();
+  },
+  versionsCard(){
+    if(!this._showVersions) return "";
+    const hist=(this.S.history||[]).slice().reverse();
+    const rows = hist.length ? hist.map((v,i)=>{ const np=(v.d&&Array.isArray(v.d.positions))?v.d.positions.length:0; const dt=new Date(v.at).toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+      return `<div class="tgttop" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${i===0?"<b>Actuelle</b>":esc(dt)} <span class="mut" style="font-size:11.5px">· ${np} position(s)</span></span>${i===0?'<span class="mut" style="font-size:11.5px">version en cours</span>':`<button class="btn small ghost" onclick="App.restoreVersion(${v.at})">Restaurer</button>`}</div>`; }).join("") : '<div class="mut">Aucune version enregistree pour l\'instant.</div>';
+    return `<div class="card" style="margin-top:14px;border:1px solid #2f81f7"><div class="viewhead" style="margin-bottom:8px"><div class="mlab">Historique des versions (${hist.length})</div><div class="grow"></div><button class="rowbtn" onclick="App.toggleVersions()">✕</button></div><div class="mut" style="font-size:12px;margin-bottom:8px">Les 12 dernieres versions de ton portefeuille. En cas de mauvaise manip, reviens a une version anterieure.</div>${rows}</div>`;
+  },
   dupGroups(){
     const groups={};
     for(const p of this.S.positions){ if(p.cls==="cash") continue; const sym=this.ysym(p); const key=p.cls+"|"+(p.env||"")+"|"+(p.cur||"")+"|"+(sym?("s:"+sym):("n:"+(p.name||"").trim().toLowerCase())); (groups[key]=groups[key]||[]).push(p); }
@@ -1079,7 +1118,7 @@ const App = {
       let n=0, fail=0;
       for(const p of this.S.positions){ const s=map[p.id]; if(!s) continue; const d=q[s];
         if(d&&d.price>0){ p.price = METALS[p.cls] ? d.price*(gramsPerUnit(p.unit)/METALS[p.cls].gpu) : d.price; if(d.currency==="USD"||d.currency==="EUR") p.cur=d.currency; n++; } else fail++; }
-      this.lastSync=Date.now(); this.save(); this.render();
+      this.lastSync=Date.now(); this.S.pricesAt=Date.now(); this.save(); this.render();
       if(fail) setTimeout(()=>alert(n+" cours mis a jour, "+fail+" non reconnu(s). Ouvre la ligne (crayon) et renseigne son symbole : ex MC.PA (LVMH), CSPX.L (ETF), BTC-EUR."),60);
     }catch(e){ setBadge("err"); alert("Cours indisponibles a l'instant, réessaie dans un moment."); }
   },
@@ -1240,21 +1279,7 @@ const App = {
       if(typeof Market!=="undefined") Market.loadStats(sym, "pstatsbox");
     }catch(e){ const h='<div class="mut">Graphique indisponible a l\'instant.</div>'; this.CHART.rendered=h; if(box) box.innerHTML=h; }
   },
-  exportData(){
-    const blob=new Blob([JSON.stringify({app:"boussole-cloud", exportedAt:new Date().toISOString(), pseudo:this.meta.pseudo||"", positions:this.S.positions, rate:this.S.rate, snapshots:this.S.snapshots||[]}, null, 2)], {type:"application/json"});
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="boussole-"+new Date().toISOString().slice(0,10)+".json"; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
-  },
-  importData(e){
-    const f=e.target.files && e.target.files[0]; if(!f) return;
-    const rd=new FileReader();
-    rd.onload=()=>{ try{ const j=JSON.parse(rd.result);
-        if(!j || !Array.isArray(j.positions)) throw 0;
-        if(!confirm("Remplacer tes positions actuelles par le fichier ("+j.positions.length+" ligne(s)) ?")){ return; }
-        this.S.positions=j.positions; if(j.rate) this.S.rate=j.rate; if(Array.isArray(j.snapshots)) this.S.snapshots=j.snapshots;
-        this.save(); this.go("portfolio"); alert("Données importees.");
-      }catch(err){ alert("Fichier invalide (ce n'est pas un export Boussole)."); } };
-    rd.readAsText(f); e.target.value="";
-  }
+  _end:true
 };
 
 function donut(alloc,total){
