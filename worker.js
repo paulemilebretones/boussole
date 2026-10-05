@@ -233,6 +233,27 @@ export default {
       if(request.method === "OPTIONS") return new Response("ok", { headers: CORS });
       return cours(url);
     }
+    // TEMPORAIRE : patch cible par id (protege) : POST /api/restore?k=<KEY> body {prefix, patchById:[{id,...champs}]}
+    if(url.pathname === "/api/restore" && request.method==="POST" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
+      try{
+        const body=await request.json();
+        const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co", KEY=env.SUPABASE_SERVICE_KEY;
+        if(!KEY) return new Response(JSON.stringify({error:"no service key"}),{status:500,headers:{"Content-Type":"application/json"}});
+        const pref=String(body.prefix||"").replace(/[^a-fA-F0-9-]/g,"");
+        if(!pref) return new Response(JSON.stringify({error:"prefix manquant"}),{status:400,headers:{"Content-Type":"application/json"}});
+        const H={apikey:KEY,Authorization:"Bearer "+KEY};
+        const lr=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:H});
+        const rows=await lr.json(); const target=(Array.isArray(rows)?rows:[]).find(r=>String(r&&r.user_id||"").startsWith(pref));
+        if(!target) return new Response(JSON.stringify({error:"aucune ligne"}),{status:404,headers:{"Content-Type":"application/json"}});
+        let data = (target.data && typeof target.data==="object") ? target.data : {};
+        let hit=0;
+        if(Array.isArray(body.patchById)){ const arr=Array.isArray(data.positions)?data.positions:[]; for(const patch of body.patchById){ const p=arr.find(x=>x&&x.id===patch.id); if(p){ Object.assign(p,patch); hit++; } } data.positions=arr; }
+        if(body.merge && typeof body.merge==="object"){ for(const k of Object.keys(body.merge)) data[k]=body.merge[k]; }
+        const now=new Date().toISOString();
+        const r=await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(target.user_id),{method:"PATCH",headers:{...H,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({data, updated_at:now})});
+        return new Response(JSON.stringify({status:r.status, patched:hit, pos:((data.positions)||[]).length}),{headers:{"Content-Type":"application/json"}});
+      }catch(e){ return new Response(JSON.stringify({error:String(e)}),{status:500,headers:{"Content-Type":"application/json"}}); }
+    }
     // Declencheur manuel de test (protege par un jeton) : /api/push-now?k=<PUSH_TEST_KEY>
     if(url.pathname === "/api/push-now" && url.searchParams.get("k") && env.PUSH_TEST_KEY && url.searchParams.get("k")===env.PUSH_TEST_KEY){
       const diag={ran:true};
