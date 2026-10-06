@@ -553,7 +553,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", peaVersements:0, sells:[]}, userId:null, saveTimer:null, FORM:null, SELL:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", peaVersements:0, sells:[], divReceived:[]}, userId:null, saveTimer:null, FORM:null, SELL:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -573,7 +573,7 @@ const App = {
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
       this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
-      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.peaVersements=+d.peaVersements||0; this.S.sells=Array.isArray(d.sells)?d.sells:[]; }
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.peaVersements=+d.peaVersements||0; this.S.sells=Array.isArray(d.sells)?d.sells:[]; this.S.divReceived=Array.isArray(d.divReceived)?d.divReceived:[]; }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
     }catch(e){}
@@ -616,7 +616,7 @@ const App = {
         let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
         if(lastStr!==JSON.stringify(snapD)){ hist.push({at:Date.now(), d:snapD}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
       }catch(_){}
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", peaVersements:this.S.peaVersements||0, sells:this.S.sells||[], savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", peaVersements:this.S.peaVersements||0, sells:this.S.sells||[], divReceived:this.S.divReceived||[], savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
@@ -687,6 +687,17 @@ const App = {
       note="Plus ou moins-value de tes placements actuels : "+this.fmtDisp(g0)+" → <b style=\"color:var(--ink)\">"+this.fmtDisp(g1)+"</b> ("+(dd>=0?"+":"")+this.fmtDisp(dd)+" sur la période). Reconstruit avec les vrais cours, converti au taux de change actuel."; }
     else { const dd=lastPt.v-first.v, pc=first.v>0?dd/first.v*100:0;
       note="Valeur de tes placements actuels sur "+rlab[range]+" : "+this.fmtDisp(first.v)+" → <b style=\"color:var(--ink)\">"+this.fmtDisp(lastPt.v)+"</b> ("+(dd>=0?"+":"")+this.fmtDisp(dd)+", "+(pc>=0?"+":"")+pc.toLocaleString("fr-FR",{maximumFractionDigits:1})+" %). Historique réel des cours de tes positions d'aujourd'hui (converti au taux de change actuel) : ce n'est pas l'historique de tes achats passés."; }
+    // Comparaison au marche sur la meme periode (indices CAC 40 et S&P 500).
+    try{
+      const idx=async(sym)=>{ try{ const j=await Market.cfetch(RELAIS+"?symbol="+encodeURIComponent(sym)+"&range="+range,600000); const pts=(j&&Array.isArray(j.points))?j.points.filter(p=>p.c!=null):[]; if(pts.length<2) return null; return (pts[pts.length-1].c-pts[0].c)/pts[0].c*100; }catch(_){ return null; } };
+      const [cac,sp]=await Promise.all([idx("^FCHI"),idx("^GSPC")]);
+      if(seq===this._evoSeq){
+        const portPc=first.v>0?(lastPt.v-first.v)/first.v*100:0, fmtPc=p=>p==null?"—":(p>=0?"+":"")+p.toLocaleString("fr-FR",{maximumFractionDigits:1})+" %";
+        let cmp=`<br><b style="color:var(--ink)">Vs le marché</b> (même période) — toi : <b style="color:var(--ink)">${fmtPc(portPc)}</b> · CAC 40 : ${fmtPc(cac)} · S&P 500 : ${fmtPc(sp)}.`;
+        if(cac!=null){ const diff=portPc-cac; cmp+=` Tu fais ${diff>=0?"mieux":"moins bien"} que le CAC 40 (${(diff>=0?"+":"")+diff.toLocaleString("fr-FR",{maximumFractionDigits:1})} pts).`; }
+        note += cmp;
+      }
+    }catch(_){}
     box2.innerHTML=wrap(evoChart(built, mode), note);
   },
   setTarget(k,v){ this.S.targets=this.S.targets||{}; const n=parseFloat(String(v).replace(",",".")); this.S.targets[k]=isNaN(n)?0:n; const sumEl=$("tgt-sum"); if(sumEl){ const s=Object.keys(this.S.targets).reduce((a,x)=>a+(+this.S.targets[x]||0),0); sumEl.textContent=s.toFixed(0)+" %"; sumEl.style.color=Math.abs(s-100)<0.5?"var(--gain)":"var(--loss)"; } },
@@ -921,6 +932,7 @@ const App = {
       ${has?this.targetsCard():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div id="divbox"></div>
+      ${has?this.divReceivedCard():""}
       ${this.sellsCard()}
       ${has?this.versionsCard():""}
       ${has?`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><div class="mlab" style="flex:1;min-width:140px">Sauvegarde</div><button class="btn small ghost" onclick="App.exportData()">⬇ Exporter</button><button class="btn small ghost" onclick="App.importData()">⬆ Importer</button><button class="btn small ghost" onclick="App.toggleVersions()">🕑 Versions</button></div>`:""}
@@ -1119,6 +1131,22 @@ const App = {
     const rows = hist.length ? hist.map((v,i)=>{ const np=(v.d&&Array.isArray(v.d.positions))?v.d.positions.length:0; const dt=new Date(v.at).toLocaleString("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
       return `<div class="tgttop" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${i===0?"<b>Actuelle</b>":esc(dt)} <span class="mut" style="font-size:11.5px">· ${np} position(s)</span></span>${i===0?'<span class="mut" style="font-size:11.5px">version en cours</span>':`<button class="btn small ghost" onclick="App.restoreVersion(${v.at})">Restaurer</button>`}</div>`; }).join("") : '<div class="mut">Aucune version enregistree pour l\'instant.</div>';
     return `<div class="card" style="margin-top:14px;border:1px solid #2f81f7"><div class="viewhead" style="margin-bottom:8px"><div class="mlab">Historique des versions (${hist.length})</div><div class="grow"></div><button class="rowbtn" onclick="App.toggleVersions()">✕</button></div><div class="mut" style="font-size:12px;margin-bottom:8px">Les 12 dernieres versions de ton portefeuille. En cas de mauvaise manip, reviens a une version anterieure.</div>${rows}</div>`;
+  },
+  addDivRow(){ this._addDiv=true; this.renderPortfolio(); const z=$("divrecv"); if(z) z.scrollIntoView({behavior:"smooth",block:"center"}); },
+  cancelDivRow(){ this._addDiv=false; this.renderPortfolio(); },
+  saveDivReceived(){ const num=v=>parseFloat(String(v==null?"":v).replace(",",".").replace(/\s/g,""))||0; const g=x=>($(x)?$(x).value:"");
+    const name=g("dv-name").trim(), amount=num(g("dv-amount")); if(!name){ alert("Quelle valeur ?"); return; } if(!(amount>0)){ alert("Quel montant reçu ?"); return; }
+    this.S.divReceived=this.S.divReceived||[]; this.S.divReceived.push({id:uid(), name, amount, cur:g("dv-cur")==="USD"?"USD":"EUR", date:g("dv-date")||new Date().toISOString().slice(0,10)});
+    this._addDiv=false; this.save(); this.render();
+  },
+  delDivReceived(id){ this.S.divReceived=(this.S.divReceived||[]).filter(x=>x.id!==id); this.save(); this.render(); },
+  divReceivedCard(){
+    const list=this.S.divReceived||[]; const yr=new Date().getFullYear();
+    const totAll=list.reduce((s,x)=>s+this.toEur(+x.amount||0,x.cur),0);
+    const totYr=list.filter(x=>(x.date||"").slice(0,4)===String(yr)).reduce((s,x)=>s+this.toEur(+x.amount||0,x.cur),0);
+    const form=this._addDiv?`<div class="card" style="margin-top:10px;background:var(--bg2)"><div class="frow c4"><div class="field"><label>Valeur</label><input id="dv-name" placeholder="Ex : TotalEnergies"></div><div class="field"><label>Montant reçu</label><input id="dv-amount" inputmode="decimal" placeholder="Ex : 42,50"></div><div class="field"><label>Devise</label><select id="dv-cur"><option value="EUR">€ Euro</option><option value="USD">$ Dollar</option></select></div><div class="field"><label>Date</label><input id="dv-date" type="date" value="${new Date().toISOString().slice(0,10)}"></div></div><div style="display:flex;gap:8px;margin-top:6px"><button class="btn small" onclick="App.saveDivReceived()">Enregistrer</button><button class="btn small ghost" onclick="App.cancelDivRow()">Annuler</button></div></div>`:"";
+    const rows=list.slice().reverse().slice(0,12).map(x=>{ const cf=v=>x.cur==="USD"?usdF.format(v):eurF.format(v); return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>${esc(x.name)} <span class="mut" style="font-size:11.5px">${esc(x.date||"")}</span></span><span style="display:flex;align-items:center;gap:8px"><span class="mono up">+${cf(+x.amount||0)}</span><button class="rowbtn" title="Supprimer" onclick="App.delDivReceived('${x.id}')">✕</button></span></div>`; }).join("");
+    return `<div class="card" id="divrecv"><div class="viewhead" style="margin-bottom:8px"><div class="mlab">Dividendes reçus</div><div class="grow"></div><button class="btn small ghost" onclick="App.addDivRow()">+ Ajouter</button></div><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:${list.length?'12px':'4px'}"><div><div class="mut" style="font-size:11px">Reçu en ${yr}</div><div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(totYr)}</div></div><div><div class="mut" style="font-size:11px">Total reçu</div><div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(totAll)}</div></div></div>${form}${rows}${!list.length&&!this._addDiv?'<div class="mut" style="font-size:12px">Note ici chaque dividende que tu touches pour suivre ton vrai revenu passif (différent de l\'estimation).</div>':""}</div>`;
   },
   setPeaDate(v){ this.S.peaDate=v||""; this.save(); this.renderPortfolio(); },
   setPeaVers(v){ this.S.peaVersements=parseFloat(String(v||"").replace(",",".").replace(/\s/g,""))||0; this.save(); this.renderPortfolio(); },
