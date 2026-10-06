@@ -214,6 +214,8 @@ tr.grouphead .sw{display:inline-block; width:9px; height:9px; border-radius:3px;
 .rangebar{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
 .rbtn{border:1px solid var(--line); background:var(--surface2); color:var(--muted); border-radius:8px; padding:5px 11px; font-size:13px; font-weight:600}
 .rbtn.on{background:var(--accent-weak); color:var(--accent); border-color:var(--accent-line)}
+body.hideamt .val, body.hideamt .pnl, body.hideamt .alt, body.hideamt td.num, body.hideamt .mono, body.hideamt .mprice{ filter:blur(8px); transition:filter .12s; cursor:pointer }
+body.hideamt .val:hover, body.hideamt .pnl:hover, body.hideamt td.num:hover, body.hideamt .mono:hover, body.hideamt .mprice:hover{ filter:none }
 </style>
 </head>
 <body>
@@ -476,6 +478,7 @@ const usdF={format:v=>new Intl.NumberFormat("en-US",{style:"currency",currency:"
 const gbpF={format:v=>new Intl.NumberFormat(LANG==="en"?"en-GB":"fr-FR",{style:"currency",currency:"GBP",currencyDisplay:"narrowSymbol"}).format(v)};
 const CURSYM={EUR:"€",USD:"$",GBP:"£"};
 let DISPCUR="EUR"; try{ DISPCUR=localStorage.getItem("boussole-cur")||"EUR"; }catch(_){}
+try{ if(localStorage.getItem("boussole-hide")==="1") document.addEventListener("DOMContentLoaded",()=>document.body.classList.add("hideamt")); }catch(_){}
 const CLS={ action:{l:"Actions",c:"#18A886"}, crypto:{l:"Crypto",c:"#9B70EE"}, etf:{l:"ETF",c:"#4E8BEF"}, or:{l:"Or",c:"#E0B54F"}, argent:{l:"Argent",c:"#B9C4D0"}, cuivre:{l:"Cuivre",c:"#C77B4A"}, bronze:{l:"Bronze",c:"#9A6B3F"}, maison:{l:"Maison / immo",c:"#5FB37A"}, montre:{l:"Montre",c:"#C9A24B"}, collection:{l:"Collection",c:"#C77BB0"}, cash:{l:"Cash",c:"#5FA8D3"}, autre:{l:"Actif",c:"#8091A9"} };
 const ORDER=["action","crypto","etf","or","argent","cuivre","bronze","maison","montre","collection","cash","autre"];
 const METALS={ or:{sym:"GC=F",gpu:31.1034768}, argent:{sym:"SI=F",gpu:31.1034768}, cuivre:{sym:"HG=F",gpu:453.59237} };
@@ -553,7 +556,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", peaVersements:0, sells:[], divReceived:[]}, userId:null, saveTimer:null, FORM:null, SELL:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", peaVersements:0, sells:[], divReceived:[], patGoal:0, patReturn:7}, userId:null, saveTimer:null, FORM:null, SELL:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -573,7 +576,7 @@ const App = {
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
       this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
-      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.peaVersements=+d.peaVersements||0; this.S.sells=Array.isArray(d.sells)?d.sells:[]; this.S.divReceived=Array.isArray(d.divReceived)?d.divReceived:[]; }
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.peaVersements=+d.peaVersements||0; this.S.sells=Array.isArray(d.sells)?d.sells:[]; this.S.divReceived=Array.isArray(d.divReceived)?d.divReceived:[]; this.S.patGoal=+d.patGoal||0; this.S.patReturn=(d.patReturn!=null?+d.patReturn:7); }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
     }catch(e){}
@@ -616,7 +619,7 @@ const App = {
         let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
         if(lastStr!==JSON.stringify(snapD)){ hist.push({at:Date.now(), d:snapD}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
       }catch(_){}
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", peaVersements:this.S.peaVersements||0, sells:this.S.sells||[], divReceived:this.S.divReceived||[], savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", peaVersements:this.S.peaVersements||0, sells:this.S.sells||[], divReceived:this.S.divReceived||[], patGoal:this.S.patGoal||0, patReturn:(this.S.patReturn!=null?this.S.patReturn:7), savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
@@ -883,6 +886,7 @@ const App = {
     catch(e){ alert("Modifie ici ; la synchro se fera a la prochaine connexion."); }
   },
   renderPortfolio(){
+    try{ this._hideAmt=localStorage.getItem("boussole-hide")==="1"; document.body.classList.toggle("hideamt",this._hideAmt); }catch(_){}
     const t=this.totals(), has=this.S.positions.length>0;
     const alloc=ORDER.map(k=>({k,v:t.byCls[k]||0})).filter(x=>x.v>0);
     let rows="";
@@ -903,7 +907,7 @@ const App = {
         </tr>`; }).join("");
     }
     $("view").innerHTML=`
-      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div>${this.S.pricesAt?`<span class="mut" style="font-size:11.5px;align-self:center;margin-right:6px">cours ${this.agoLabel(this.S.pricesAt)}</span>`:""}<button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
+      <div class="viewhead"><h2>Mon portefeuille</h2><div class="grow"></div>${this.S.pricesAt?`<span class="mut" style="font-size:11.5px;align-self:center;margin-right:6px">cours ${this.agoLabel(this.S.pricesAt)}</span>`:""}<button id="hideamt-btn" class="btn small ghost" title="Masquer / afficher les montants" onclick="App.toggleHideAmounts()">${this._hideAmt?"🙈":"👁"}</button><button class="btn small ghost" onclick="App.syncCours()">↻ Cours</button><button class="btn small" onclick="App.openForm('new')">+ Ajouter</button></div>
       ${this.remindersBanner()}
       ${this.localBakBanner()}
       ${this.dupBanner()}
@@ -929,7 +933,9 @@ const App = {
       </div>
       ${has?this.retraiteCard():""}
       ${has?this.peaCard():""}
+      ${has?this.patrimoineCard():""}
       ${has?this.targetsCard():""}
+      ${has?this.deviseBar():""}
       ${has?`<div class="card"><div class="mlab" style="margin-bottom:12px">Par enveloppe (PEA, CTO, crypto…)</div>${(()=>{ const be={}; for(const p of this.S.positions){ const ve=this.toEur((+p.qty||0)*(+p.price||0),p.cur); be[p.env||"Autre"]=(be[p.env||"Autre"]||0)+ve; } return Object.keys(be).map(e=>({e,v:be[e]})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).map(x=>{ const pc=t.val?x.v/t.val*100:0; return `<div class="envbar"><div class="top"><span><b>${esc(x.e)}</b></span><span class="mono">${this.fmtDisp(x.v)} · ${pc.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pc}%"></div></div></div>`; }).join(""); })()}</div>`:""}
       <div id="divbox"></div>
       ${has?this.divReceivedCard():""}
@@ -1148,6 +1154,27 @@ const App = {
     const rows=list.slice().reverse().slice(0,12).map(x=>{ const cf=v=>x.cur==="USD"?usdF.format(v):eurF.format(v); return `<div class="tgttop" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>${esc(x.name)} <span class="mut" style="font-size:11.5px">${esc(x.date||"")}</span></span><span style="display:flex;align-items:center;gap:8px"><span class="mono up">+${cf(+x.amount||0)}</span><button class="rowbtn" title="Supprimer" onclick="App.delDivReceived('${x.id}')">✕</button></span></div>`; }).join("");
     return `<div class="card" id="divrecv"><div class="viewhead" style="margin-bottom:8px"><div class="mlab">Dividendes reçus</div><div class="grow"></div><button class="btn small ghost" onclick="App.addDivRow()">+ Ajouter</button></div><div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:${list.length?'12px':'4px'}"><div><div class="mut" style="font-size:11px">Reçu en ${yr}</div><div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(totYr)}</div></div><div><div class="mut" style="font-size:11px">Total reçu</div><div style="font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace">${this.fmtDisp(totAll)}</div></div></div>${form}${rows}${!list.length&&!this._addDiv?'<div class="mut" style="font-size:12px">Note ici chaque dividende que tu touches pour suivre ton vrai revenu passif (différent de l\'estimation).</div>':""}</div>`;
   },
+  setPatGoal(v){ this.S.patGoal=parseFloat(String(v||"").replace(",",".").replace(/\s/g,""))||0; this.save(); this.renderPortfolio(); },
+  setPatReturn(v){ let n=parseFloat(String(v||"").replace(",",".").replace(/\s/g,"")); if(isNaN(n)) n=7; this.S.patReturn=n; this.save(); this.renderPortfolio(); },
+  monthlyDCA(){ const rem=this.S.reminders||[]; let m=0; for(const r of rem){ const amt=this.toEur(+r.amount||0, r.cur), n=(+r.everyN||1); if(n>0&&amt>0) m+=amt/n; } return m; },
+  patrimoineCard(){
+    const t=this.totals(), goal=+this.S.patGoal||0, ret=(this.S.patReturn!=null?+this.S.patReturn:7), pv=t.val, pmt=this.monthlyDCA(), r=ret/100/12;
+    let proj="";
+    if(goal>0){
+      if(pv>=goal){ proj=`<div style="font-size:13px;margin-top:8px;color:var(--gain)"><b>🎉 Objectif déjà atteint !</b></div>`; }
+      else { let v=pv, n=0; while(v<goal && n<1200){ v=v*(1+r)+pmt; n++; }
+        if(n>=1200){ proj=`<div class="mut" style="font-size:12.5px;margin-top:8px">Avec ${ret} %/an${pmt>0?" et "+this.fmtDisp(pmt)+"/mois":""}, l'objectif n'est pas atteint en 100 ans.${pmt<=0?" Ajoute un rappel d'achat mensuel pour projeter.":""}</div>`; }
+        else { const dd=new Date(); dd.setMonth(dd.getMonth()+n); const y=Math.floor(n/12), mo=n%12; proj=`<div style="font-size:13px;margin-top:8px">Au rythme de <b>${this.fmtDisp(pmt)}/mois</b> et <b>${ret} %/an</b>, tu atteins <b>${this.fmtDisp(goal)}</b> vers <b style="color:var(--gain)">${dd.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</b> <span class="mut">(dans ${y>0?y+" an"+(y>1?"s ":" "):""}${mo} mois)</span>.</div>`; } }
+    }
+    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Objectif de patrimoine</div><div class="frow c4"><div class="field"><label>Mon objectif</label><input inputmode="decimal" value="${goal||''}" placeholder="Ex : 100000" onchange="App.setPatGoal(this.value)"></div><div class="field"><label>Rendement attendu /an (%)</label><input inputmode="decimal" value="${ret}" onchange="App.setPatReturn(this.value)"></div></div>${proj}<div class="mut" style="font-size:11px;margin-top:8px">Projection à partir de ta valeur actuelle (${this.fmtDisp(pv)}) et de tes rappels mensuels (${this.fmtDisp(pmt)}/mois). Le rendement est une hypothèse, pas une garantie.</div></div>`;
+  },
+  deviseBar(){
+    const by={EUR:0,USD:0,GBP:0}; for(const p of this.S.positions){ const eur=this.toEur((+p.qty||0)*(+p.price||0),p.cur||"EUR"), cur=p.cur||"EUR"; if(cur==="USD") by.USD+=eur; else if(cur==="GBP") by.GBP+=eur; else by.EUR+=eur; }
+    const tot=by.EUR+by.USD+by.GBP; if(tot<=0) return "";
+    const seg=(lab,v,c)=> v>0?`<div class="envbar"><div class="top"><span><b>${lab}</b></span><span class="mono">${this.fmtDisp(v)} · ${(v/tot*100).toFixed(0)} %</span></div><div class="envtrack"><div style="width:${(v/tot*100).toFixed(1)}%;background:${c}"></div></div></div>`:"";
+    return `<div class="card"><div class="mlab" style="margin-bottom:12px">Exposition par devise</div>${seg("€ Euro",by.EUR,"#4E8BEF")}${seg("$ Dollar",by.USD,"#18A886")}${seg("£ Livre",by.GBP,"#C9A24B")}<div class="mut" style="font-size:11px;margin-top:6px">Part de ton portefeuille dans chaque devise (ta sensibilité au taux de change).</div></div>`;
+  },
+  toggleHideAmounts(){ this._hideAmt=!this._hideAmt; try{ localStorage.setItem("boussole-hide", this._hideAmt?"1":"0"); }catch(_){} document.body.classList.toggle("hideamt", this._hideAmt); const b=$("hideamt-btn"); if(b) b.textContent=this._hideAmt?"🙈":"👁"; },
   setPeaDate(v){ this.S.peaDate=v||""; this.save(); this.renderPortfolio(); },
   setPeaVers(v){ this.S.peaVersements=parseFloat(String(v||"").replace(",",".").replace(/\s/g,""))||0; this.save(); this.renderPortfolio(); },
   peaCard(){
