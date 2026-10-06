@@ -553,7 +553,7 @@ const Push = {
 };
 const App = {
   tab:"portfolio", email:"", meta:{}, lastSync:0, CHART:null, remEdit:null,
-  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", sells:[]}, userId:null, saveTimer:null, FORM:null, SELL:null,
+  S:{positions:[], rate:1.16, rateGbp:0.86, snapshots:[], tdKey:"", reminders:[], pushSub:null, watch:[], targets:{}, alerts:[], dividends:{}, history:[], pricesAt:0, peaDate:"", peaVersements:0, sells:[]}, userId:null, saveTimer:null, FORM:null, SELL:null,
   async start(session){
     this.userId=session.user.id;
     this.email=session.user.email||"";
@@ -563,6 +563,8 @@ const App = {
     $("auth").style.display="none"; $("app").style.display="block";
     await this.load(); applyRate(this.S.rate); this.go("portfolio"); this.refreshRate(); this.save();
     try{ if(typeof Push!=="undefined" && Push.supported()) Push.register(); }catch(_){}
+    // Rafraichissement auto des cours a l'ouverture si les prix datent de plus de 5 min.
+    try{ if(this.S.positions.some(p=>this.ysym(p)&&(+p.qty>0)) && (!this.S.pricesAt || Date.now()-this.S.pricesAt>300000)) setTimeout(()=>{ try{ this.syncCours(true); }catch(_){} }, 800); }catch(_){}
   },
   async load(){
     this._loadOK=false; // tant que la lecture n'est pas confirmee, on refuse d'ecraser la base
@@ -571,7 +573,7 @@ const App = {
       const row = data && data[0];
       this._loadOK=true; // lecture reussie, on connait l'etat reel (meme si la ligne est vide)
       this._loadedAt=(row&&row.updated_at)||null; this._conflictWarned=false; // reference anti-ecrasement
-      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.sells=Array.isArray(d.sells)?d.sells:[]; }
+      if(true){ const d=(row&&row.data)||{}; this.S.positions=Array.isArray(d.positions)?d.positions:[]; this.S.rate=d.rate||1.16; this.S.snapshots=Array.isArray(d.snapshots)?d.snapshots:[]; this.S.tdKey=d.tdKey||""; this.S.reminders=Array.isArray(d.reminders)?d.reminders:[]; this.S.pushSub=d.pushSub||null; this.S.rateGbp=d.rateGbp||0.86; this.S.watch=Array.isArray(d.watch)?d.watch:[]; this.S.targets=(d.targets&&typeof d.targets==="object")?d.targets:{}; this.S.alerts=Array.isArray(d.alerts)?d.alerts:[]; this.S.dividends=(d.dividends&&typeof d.dividends==="object")?d.dividends:{}; this.S.history=Array.isArray(d.history)?d.history:[]; this.S.pricesAt=d.pricesAt||0; this.S.peaDate=d.peaDate||""; this.S.peaVersements=+d.peaVersements||0; this.S.sells=Array.isArray(d.sells)?d.sells:[]; }
       // Filet de securite : si la copie locale de cet appareil contient plus de positions que la base, on propose de restaurer.
       try{ const raw=localStorage.getItem("boussole-bak-"+this.userId); if(raw){ const b=JSON.parse(raw); const lp=(b&&b.data&&Array.isArray(b.data.positions))?b.data.positions.length:0; if(lp>this.S.positions.length) this._localBak=b; } }catch(_){}
     }catch(e){}
@@ -614,7 +616,7 @@ const App = {
         let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
         if(lastStr!==JSON.stringify(snapD)){ hist.push({at:Date.now(), d:snapD}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
       }catch(_){}
-      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", sells:this.S.sells||[], savedAt:Date.now()};
+      const payload={positions:this.S.positions, rate:this.S.rate, rateGbp:this.S.rateGbp, snapshots:this.S.snapshots||[], tdKey:this.S.tdKey||"", reminders:this.S.reminders||[], pushSub:this.S.pushSub||null, watch:this.S.watch||[], targets:this.S.targets||{}, alerts:this.S.alerts||[], dividends:this.S.dividends||{}, history:this.S.history||[], pricesAt:this.S.pricesAt||0, peaDate:this.S.peaDate||"", peaVersements:this.S.peaVersements||0, sells:this.S.sells||[], savedAt:Date.now()};
       // Filet de securite : copie locale sur CET appareil (survit a un probleme cote base).
       try{ localStorage.setItem("boussole-bak-"+this.userId, JSON.stringify({data:payload, at:Date.now()})); }catch(_){}
       const now=new Date().toISOString();
@@ -1079,10 +1081,12 @@ const App = {
   delSell(id){ if(!confirm("Supprimer cette vente de l'historique ? (ça ne remet pas les titres dans ton portefeuille)")) return; this.S.sells=(this.S.sells||[]).filter(x=>x.id!==id); this.save(); this.render(); },
   sellsCard(){
     const sells=this.S.sells||[]; if(!sells.length) return "";
+    const taxOf=x=>{ const g=+x.gain||0; if(g<=0) return 0; return (x.env==="PEA")? g*0.172 : g*0.30; }; // CTO: flat tax 30% ; PEA: prelevements sociaux 17,2% (IR exonere apres 5 ans)
     const totalEur=sells.reduce((s,x)=>s+this.toEur(+x.gain||0,x.cur),0);
+    const taxEur=sells.reduce((s,x)=>s+this.toEur(taxOf(x),x.cur),0);
     const rows=sells.slice().reverse().map(x=>{ const cf=v=>x.cur==="USD"?usdF.format(v):eurF.format(v), g=+x.gain||0;
       return `<div class="tgttop" style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="flex:1"><b>${esc(x.name)}</b> <span class="mut" style="font-size:11.5px">${esc(x.date||"")} · ${(+x.qty||0).toLocaleString("fr-FR",{maximumFractionDigits:8})} × ${cf(+x.price||0)}${x.env?` · ${esc(x.env)}`:""}</span></div><span style="display:flex;align-items:center;gap:8px"><span class="mono ${g>=0?'up':'down'}">${(g>=0?'+':'')+cf(g)}</span><button class="rowbtn" title="Supprimer" onclick="App.delSell('${x.id}')">✕</button></span></div>`; }).join("");
-    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Plus-values réalisées (ventes)</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total réalisé</b></span><span class="mono ${totalEur>=0?'up':'down'}"><b>${(totalEur>=0?'+':'')+this.fmtDisp(totalEur)}</b></span></div><div class="mut" style="font-size:11px;margin-top:8px">Gain de tes ventes passées (prix de vente − prix d'achat moyen − frais). Informatif : la fiscalité réelle dépend de l'enveloppe (PEA exonéré après 5 ans, CTO imposable).</div></div>`;
+    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Plus-values réalisées (ventes)</div>${rows}<div class="tgttop" style="padding:9px 0 0"><span><b>Total réalisé</b></span><span class="mono ${totalEur>=0?'up':'down'}"><b>${(totalEur>=0?'+':'')+this.fmtDisp(totalEur)}</b></span></div>${taxEur>0?`<div class="tgttop" style="padding:5px 0 0"><span class="mut">Impôt estimé</span><span class="mono mut">− ${this.fmtDisp(taxEur)}</span></div><div class="tgttop" style="padding:5px 0 0"><span><b>Net après impôt</b></span><span class="mono"><b>${this.fmtDisp(totalEur-taxEur)}</b></span></div>`:""}<div class="mut" style="font-size:11px;margin-top:8px">Gain = prix de vente − prix d'achat moyen − frais. Impôt estimé : <b>30 %</b> (flat tax) sur un CTO, <b>17,2 %</b> (prélèvements sociaux) sur un PEA de +5 ans. Estimation informative, pas un calcul fiscal officiel.</div></div>`;
   },
   exportData(){
     try{
@@ -1117,6 +1121,7 @@ const App = {
     return `<div class="card" style="margin-top:14px;border:1px solid #2f81f7"><div class="viewhead" style="margin-bottom:8px"><div class="mlab">Historique des versions (${hist.length})</div><div class="grow"></div><button class="rowbtn" onclick="App.toggleVersions()">✕</button></div><div class="mut" style="font-size:12px;margin-bottom:8px">Les 12 dernieres versions de ton portefeuille. En cas de mauvaise manip, reviens a une version anterieure.</div>${rows}</div>`;
   },
   setPeaDate(v){ this.S.peaDate=v||""; this.save(); this.renderPortfolio(); },
+  setPeaVers(v){ this.S.peaVersements=parseFloat(String(v||"").replace(",",".").replace(/\s/g,""))||0; this.save(); this.renderPortfolio(); },
   peaCard(){
     const hasPea=this.S.positions.some(p=>p.env==="PEA" && this.toEur((+p.qty||0)*(+p.price||0),p.cur)>0);
     const d=this.S.peaDate||"";
@@ -1128,7 +1133,9 @@ const App = {
       if(ms<=0){ info=`<div class="mut" style="font-size:12.5px;margin-top:8px">✓ Cap des 5 ans atteint (le ${cap.toLocaleDateString("fr-FR")}) : tes retraits sont exonérés d'impôt sur le revenu (hors prélèvements sociaux).</div>`; }
       else { const days=Math.ceil(ms/86400000), y=Math.floor(days/365), mo=Math.floor((days%365)/30); info=`<div class="mut" style="font-size:12.5px;margin-top:8px">Cap fiscal des 5 ans le <b style="color:var(--ink)">${cap.toLocaleDateString("fr-FR")}</b> (dans ${y>0?y+" an"+(y>1?"s ":" "):""}${mo} mois). Avant cette date, tout retrait ferme le plan et fait perdre l'avantage.</div>`; }
     }
-    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Mon PEA</div><div class="field" style="max-width:260px"><label>Date d'ouverture <span class="mut" style="font-weight:400">(pour suivre le cap des 5 ans)</span></label><input type="date" value="${esc(d)}" onchange="App.setPeaDate(this.value)"></div>${info}</div>`;
+    const PLAFOND=150000, vers=+this.S.peaVersements||0, pcV=Math.min(100,vers/PLAFOND*100), reste=Math.max(0,PLAFOND-vers);
+    const versBlock=`<div class="field" style="max-width:260px;margin-top:10px"><label>Versements cumulés <span class="mut" style="font-weight:400">(ce que tu as déposé, hors gains - plafond 150 000 €)</span></label><input inputmode="decimal" value="${vers||''}" placeholder="Ex : 12000" onchange="App.setPeaVers(this.value)"></div>${vers>0?`<div class="envbar" style="margin-top:8px"><div class="top"><span class="mut" style="font-size:12px">${eurF.format(vers)} versés · reste ${eurF.format(reste)}</span><span class="mono" style="font-size:12px">${pcV.toFixed(0)} %</span></div><div class="envtrack"><div style="width:${pcV}%;${vers>=PLAFOND?'background:var(--loss)':''}"></div></div></div>${vers>=PLAFOND?'<div class="mut" style="font-size:11.5px;margin-top:4px;color:var(--loss)">Plafond de versements atteint (les gains peuvent continuer à grossir, mais tu ne peux plus verser).</div>':''}`:""}`;
+    return `<div class="card"><div class="mlab" style="margin-bottom:8px">Mon PEA</div><div class="field" style="max-width:260px"><label>Date d'ouverture <span class="mut" style="font-weight:400">(pour suivre le cap des 5 ans)</span></label><input type="date" value="${esc(d)}" onchange="App.setPeaDate(this.value)"></div>${info}${versBlock}</div>`;
   },
   dupGroups(){
     const groups={};
@@ -1161,11 +1168,11 @@ const App = {
     if(METALS[p.cls]) return METALS[p.cls].sym;
     return t;
   },
-  async syncCours(){
+  async syncCours(auto){
     const map={}, syms=[];
     for(const p of this.S.positions){ const s=this.ysym(p); if(s){ map[p.id]=s; if(!syms.includes(s)) syms.push(s); } }
-    if(!syms.length){ alert("Renseigne le symbole de cotation de tes lignes (ex : NVDA, MC.PA, BTC-EUR) pour recuperer les cours."); return; }
-    setBadge("pending");
+    if(!syms.length){ if(!auto) alert("Renseigne le symbole de cotation de tes lignes (ex : NVDA, MC.PA, BTC-EUR) pour recuperer les cours."); return; }
+    if(!auto) setBadge("pending");
     try{
       const r=await fetch(RELAIS+"?symbols="+encodeURIComponent(syms.join(",")),{cache:"no-store"});
       const j=await r.json(); const q=(j&&j.quotes)||{};
@@ -1173,8 +1180,8 @@ const App = {
       for(const p of this.S.positions){ const s=map[p.id]; if(!s) continue; const d=q[s];
         if(d&&d.price>0){ p.price = METALS[p.cls] ? d.price*(gramsPerUnit(p.unit)/METALS[p.cls].gpu) : d.price; if(d.currency==="USD"||d.currency==="EUR") p.cur=d.currency; n++; } else fail++; }
       this.lastSync=Date.now(); this.S.pricesAt=Date.now(); this.save(); this.render();
-      if(fail) setTimeout(()=>alert(n+" cours mis a jour, "+fail+" non reconnu(s). Ouvre la ligne (crayon) et renseigne son symbole : ex MC.PA (LVMH), CSPX.L (ETF), BTC-EUR."),60);
-    }catch(e){ setBadge("err"); alert("Cours indisponibles a l'instant, réessaie dans un moment."); }
+      if(fail && !auto) setTimeout(()=>alert(n+" cours mis a jour, "+fail+" non reconnu(s). Ouvre la ligne (crayon) et renseigne son symbole : ex MC.PA (LVMH), CSPX.L (ETF), BTC-EUR."),60);
+    }catch(e){ if(!auto){ setBadge("err"); alert("Cours indisponibles a l'instant, réessaie dans un moment."); } }
   },
   preset(i){
     const pr=PRESETS[i]; if(!pr) return;
