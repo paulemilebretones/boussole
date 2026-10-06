@@ -226,6 +226,53 @@ async function runPriceAlerts(env){
   }
 }
 
+// Rappel la VEILLE du detachement d'un dividende (pour detenir l'action a temps). Tourne 1x/jour.
+async function runDividendReminders(env){
+  const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co";
+  const KEY=env.SUPABASE_SERVICE_KEY, VAPID_PRIV=parseVapid(env), SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
+  if(!KEY||!VAPID_PRIV) return;
+  let rows=[]; try{ const r=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok) rows=await r.json(); else return; }catch(_){ return; }
+  const ymd=d=>d.toISOString().slice(0,10); const tmr=ymd(new Date(Date.now()+86400000));
+  for(const row of rows){
+    const data=row&&row.data; if(!data) continue; const sub=data.pushSub, divs=data.dividends;
+    if(!sub||!sub.endpoint||!divs||typeof divs!=="object") continue;
+    data.divNotif=data.divNotif||{}; let changed=false;
+    for(const ysym of Object.keys(divs)){ const dv=divs[ysym]; if(!dv||!dv.exDiv) continue;
+      const ex=new Date(dv.exDiv*1000);
+      if(ymd(ex)===tmr && data.divNotif[ysym]!==ymd(ex)){
+        const nm=dv.name||ysym, body=nm+" detache son dividende demain ("+ex.toLocaleDateString("fr-FR")+"). Aujourd'hui est le dernier jour pour detenir l'action et toucher le dividende.";
+        try{ await _sendPush(sub, JSON.stringify({title:"Dividende demain : "+nm, body, url:"/"}), VAPID_PRIV, SUBJECT); data.divNotif[ysym]=ymd(ex); changed=true; }catch(_){}
+      }
+    }
+    if(changed){ try{ await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(row.user_id),{method:"PATCH",headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data})}); }catch(_){} }
+  }
+}
+
+// Alerte de forte variation journaliere (>=6%) sur les valeurs detenues ou suivies. Tourne 1x/jour (apres cloture).
+async function runMoveAlerts(env){
+  const SUPA=env.SUPABASE_URL||"https://smmaxgjxsisoxqlpoopi.supabase.co";
+  const KEY=env.SUPABASE_SERVICE_KEY, VAPID_PRIV=parseVapid(env), SUBJECT=env.VAPID_SUBJECT||"mailto:boussole@boussole.app";
+  if(!KEY||!VAPID_PRIV) return;
+  let rows=[]; try{ const r=await fetch(SUPA+"/rest/v1/portfolios?select=user_id,data",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}}); if(r.ok) rows=await r.json(); else return; }catch(_){ return; }
+  const symName=(data)=>{ const m=new Map();
+    if(Array.isArray(data.positions)) for(const p of data.positions){ const s=(p&&p.ysym)||(p&&p.ticker); if(s&&+p.qty>0) m.set(s, p.name||s); }
+    if(Array.isArray(data.watch)) for(const w of data.watch){ if(w&&w.sym) m.set(w.sym, w.name||w.sym); }
+    return m; };
+  const need=new Set(); for(const row of rows){ const data=row&&row.data; if(!data||!data.pushSub||!data.pushSub.endpoint) continue; for(const s of symName(data).keys()) need.add(s); }
+  if(!need.size) return;
+  const chg={}; for(const s of need){ try{ const q=await chart(s,"1d"); if(q&&q.price>0&&q.prevClose>0) chg[s]=(q.price-q.prevClose)/q.prevClose*100; }catch(_){} }
+  const TH=6, today=new Date().toISOString().slice(0,10);
+  for(const row of rows){
+    const data=row&&row.data; if(!data) continue; const sub=data.pushSub; if(!sub||!sub.endpoint) continue;
+    data.moveNotif=data.moveNotif||{}; let changed=false; const m=symName(data);
+    for(const [s,nm] of m){ const c=chg[s]; if(c==null||Math.abs(c)<TH) continue; if(data.moveNotif[s]===today) continue;
+      const body=nm+" a bouge de "+(c>=0?"+":"")+c.toFixed(1)+"% aujourd'hui.";
+      try{ await _sendPush(sub, JSON.stringify({title:"Forte variation : "+nm, body, url:"/"}), VAPID_PRIV, SUBJECT); data.moveNotif[s]=today; changed=true; }catch(_){}
+    }
+    if(changed){ try{ await fetch(SUPA+"/rest/v1/portfolios?user_id=eq."+encodeURIComponent(row.user_id),{method:"PATCH",headers:{apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({data})}); }catch(_){} }
+  }
+}
+
 export default {
   async fetch(request, env){
     const url = new URL(request.url);
@@ -256,7 +303,8 @@ export default {
   },
   async scheduled(event, env, ctx){
     const h=new Date(event.scheduledTime||Date.now()).getUTCHours();
-    if(h===7) ctx.waitUntil(runDailyReminders(env));
+    if(h===7){ ctx.waitUntil(runDailyReminders(env)); ctx.waitUntil(runDividendReminders(env)); }
+    if(h===20) ctx.waitUntil(runMoveAlerts(env));
     ctx.waitUntil(runPriceAlerts(env));
   }
 };
