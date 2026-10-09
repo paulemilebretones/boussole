@@ -605,13 +605,14 @@ const App = {
     this.saveTimer=setTimeout(async()=>{
       if(!this.userId){ setBadge("err"); return; }
       if(this._loadOK===false){ setBadge("err"); return; } // SECURITE : lecture non confirmee, on n'ecrase JAMAIS la base
-      // CONCURRENCE : si la base a ete modifiee ailleurs (autre onglet/appareil) depuis notre chargement, on n'ecrase pas.
-      try{ const { data:cur } = await sb.from("portfolios").select("updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
-        const remoteAt = cur && cur[0] && cur[0].updated_at;
-        if(remoteAt && this._loadedAt && new Date(remoteAt).getTime() > new Date(this._loadedAt).getTime()+1000){
-          setBadge("err");
-          if(!this._conflictWarned){ this._conflictWarned=true; alert("Tes donnees ont ete modifiees ailleurs (autre onglet ou appareil). Recharge la page pour recuperer la derniere version avant de continuer, afin de ne rien ecraser."); }
-          return;
+      // CONCURRENCE : si la base a change ailleurs (autre onglet/appareil), on NE BLOQUE PLUS (ca gelait les sauvegardes et affichait "not saved").
+      // A la place : on garde d'abord la version distante dans l'historique des versions (recuperable), PUIS on enregistre la notre. Aucune perte.
+      try{ const { data:cur } = await sb.from("portfolios").select("data,updated_at").eq("user_id",this.userId).order("updated_at",{ascending:false}).limit(1);
+        const remoteAt = cur && cur[0] && cur[0].updated_at, rd = cur && cur[0] && cur[0].data;
+        if(remoteAt && this._loadedAt && new Date(remoteAt).getTime() > new Date(this._loadedAt).getTime()+1000 && rd && Array.isArray(rd.positions)){
+          let hist=Array.isArray(this.S.history)?this.S.history.slice():[]; const snapR={positions:rd.positions||[], watch:rd.watch||[], reminders:rd.reminders||[], alerts:rd.alerts||[], targets:rd.targets||{}, dividends:rd.dividends||{}, sells:rd.sells||[], peaDate:rd.peaDate||"", rate:rd.rate, rateGbp:rd.rateGbp};
+          const lastStr=hist.length?JSON.stringify(hist[hist.length-1].d):null;
+          if(lastStr!==JSON.stringify(snapR)){ hist.push({at:Date.now(), d:snapR}); if(hist.length>12) hist=hist.slice(hist.length-12); this.S.history=hist; }
         }
       }catch(_){}
       // Historique des versions (12 dernieres) : permet de revenir en arriere apres une mauvaise manip.
